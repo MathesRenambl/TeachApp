@@ -3,8 +3,13 @@ import React, { useState, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Animated, PanResponder, Dimensions, Alert, TextInput, } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle } from 'react-native-svg';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types'; 
+import { useNavigation } from '@react-navigation/native';
+import MatchTheFollowing from './MatchTheFollowing';
 
 const { width, height } = Dimensions.get('window');
+type Navigation = NativeStackNavigationProp<RootStackParamList, 'ExamApp'>;
 
 interface Question {
     id: number;
@@ -125,7 +130,7 @@ interface MatchConnection {
     rightIndex: number;
 }
 
-const TeachApp: React.FC = () => {
+const ExamApp: React.FC = () => {
     const [currentSection, setCurrentSection] = useState(0);
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: any }>({});
@@ -135,6 +140,7 @@ const TeachApp: React.FC = () => {
     const [dragLine, setDragLine] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } } | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [dragStartItem, setDragStartItem] = useState<{ item: string; index: number; type: 'left' | 'right' } | null>(null);
+    const navigation = useNavigation<Navigation>();
 
     React.useEffect(() => {
         const timer = setInterval(() => {
@@ -142,7 +148,6 @@ const TeachApp: React.FC = () => {
         }, 1000);
         return () => clearInterval(timer);
     }, []);
-
     const formatTime = (seconds: number) => {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
@@ -221,150 +226,150 @@ const TeachApp: React.FC = () => {
         );
     };
 
-    const MatchTheFollowing: React.FC = () => {
-        const question = examData.sections[currentSection].questions[currentQuestion];
-        const leftItems = question.left || [];
-        const rightItems = question.right || [];
-        const questionKey = `${currentSection}-${currentQuestion}`;
+    // const MatchTheFollowing: React.FC = () => {
+    //     const question = examData.sections[currentSection].questions[currentQuestion];
+    //     const leftItems = question.left || [];
+    //     const rightItems = question.right || [];
+    //     const questionKey = `${currentSection}-${currentQuestion}`;
 
-        const handleStartDrag = (item: string, index: number, type: 'left' | 'right', coordinates: { x: number; y: number }) => {
-            setIsDragging(true);
-            setDragStartItem({ item, index, type });
-            setDragLine({ start: coordinates, end: coordinates });
-        };
+    //     const handleStartDrag = (item: string, index: number, type: 'left' | 'right', coordinates: { x: number; y: number }) => {
+    //         setIsDragging(true);
+    //         setDragStartItem({ item, index, type });
+    //         setDragLine({ start: coordinates, end: coordinates });
+    //     };
 
-        const handleDrag = (coordinates: { x: number; y: number }) => {
-            if (dragLine) {
-                setDragLine(prev => prev ? { ...prev, end: coordinates } : null);
-            }
-        };
+    //     const handleDrag = (coordinates: { x: number; y: number }) => {
+    //         if (dragLine) {
+    //             setDragLine(prev => prev ? { ...prev, end: coordinates } : null);
+    //         }
+    //     };
 
-        const handleEndDrag = (item: string, index: number, type: 'left' | 'right', coordinates: { x: number; y: number }) => {
-            if (dragStartItem && dragStartItem.type !== type) {
-                const connection: MatchConnection = {
-                    left: type === 'left' ? item : dragStartItem.item,
-                    right: type === 'right' ? item : dragStartItem.item,
-                    leftIndex: type === 'left' ? index : dragStartItem.index,
-                    rightIndex: type === 'right' ? index : dragStartItem.index,
-                };
+    //     const handleEndDrag = (item: string, index: number, type: 'left' | 'right', coordinates: { x: number; y: number }) => {
+    //         if (dragStartItem && dragStartItem.type !== type) {
+    //             const connection: MatchConnection = {
+    //                 left: type === 'left' ? item : dragStartItem.item,
+    //                 right: type === 'right' ? item : dragStartItem.item,
+    //                 leftIndex: type === 'left' ? index : dragStartItem.index,
+    //                 rightIndex: type === 'right' ? index : dragStartItem.index,
+    //             };
 
-                setMatchConnections(prev => {
-                    const existing = prev[questionKey] || [];
-                    const filtered = existing.filter(conn =>
-                        conn.left !== connection.left && conn.right !== connection.right
-                    );
-                    return { ...prev, [questionKey]: [...filtered, connection] };
-                });
-            }
+    //             setMatchConnections(prev => {
+    //                 const existing = prev[questionKey] || [];
+    //                 const filtered = existing.filter(conn =>
+    //                     conn.left !== connection.left && conn.right !== connection.right
+    //                 );
+    //                 return { ...prev, [questionKey]: [...filtered, connection] };
+    //             });
+    //         }
 
-            setIsDragging(false);
-            setDragLine(null);
-            setDragStartItem(null);
-        };
+    //         setIsDragging(false);
+    //         setDragLine(null);
+    //         setDragStartItem(null);
+    //     };
 
-        const connections = matchConnections[questionKey] || [];
+    //     const connections = matchConnections[questionKey] || [];
 
-        return (
-            <View style={styles.matchContainer}>
-                <Text style={styles.matchInstructions}>
-                    {question.question}
-                </Text>
-                <Text style={styles.matchSubInstructions}>
-                    Drag items from Column A to Column B to create matches
-                </Text>
+    //     return (
+    //         <View style={styles.matchContainer}>
+    //             <Text style={styles.matchInstructions}>
+    //                 {question.question}
+    //             </Text>
+    //             <Text style={styles.matchSubInstructions}>
+    //                 Drag items from Column A to Column B to create matches
+    //             </Text>
 
-                <View style={styles.matchContent}>
-                    <View style={styles.leftColumn}>
-                        <View style={styles.columnHeader}>
-                            <Icon name="radio-button-checked" size={16} color="#3B82F6" />
-                            <Text style={styles.columnHeaderText}>Column A</Text>
-                        </View>
-                        {leftItems.map((item, index) => {
-                            const isConnected = connections.some(conn => conn.left === item);
-                            return (
-                                <MatchItem
-                                    key={`left-${index}`}
-                                    item={item}
-                                    index={index}
-                                    type="left"
-                                    onStartDrag={handleStartDrag}
-                                    onDrag={handleDrag}
-                                    onEndDrag={handleEndDrag}
-                                    isConnected={isConnected}
-                                />
-                            );
-                        })}
-                    </View>
+    //             <View style={styles.matchContent}>
+    //                 <View style={styles.leftColumn}>
+    //                     <View style={styles.columnHeader}>
+    //                         <Icon name="radio-button-checked" size={16} color="#3B82F6" />
+    //                         <Text style={styles.columnHeaderText}>Column A</Text>
+    //                     </View>
+    //                     {leftItems.map((item, index) => {
+    //                         const isConnected = connections.some(conn => conn.left === item);
+    //                         return (
+    //                             <MatchItem
+    //                                 key={`left-${index}`}
+    //                                 item={item}
+    //                                 index={index}
+    //                                 type="left"
+    //                                 onStartDrag={handleStartDrag}
+    //                                 onDrag={handleDrag}
+    //                                 onEndDrag={handleEndDrag}
+    //                                 isConnected={isConnected}
+    //                             />
+    //                         );
+    //                     })}
+    //                 </View>
 
-                    <View style={styles.matchMiddle}>
-                        <Svg height="300" width="60" style={styles.svgContainer}>
-                            {connections.map((conn, index) => (
-                                <Line
-                                    key={index}
-                                    x1="10"
-                                    y1={40 + conn.leftIndex * 70}
-                                    x2="50"
-                                    y2={40 + conn.rightIndex * 70}
-                                    stroke="#10B981"
-                                    strokeWidth="3"
-                                    strokeDasharray="5,5"
-                                />
-                            ))}
-                            {isDragging && dragLine && (
-                                <Line
-                                    x1={dragLine.start.x}
-                                    y1={dragLine.start.y}
-                                    x2={dragLine.end.x}
-                                    y2={dragLine.end.y}
-                                    stroke="#EF4444"
-                                    strokeWidth="2"
-                                    strokeDasharray="3,3"
-                                />
-                            )}
-                        </Svg>
-                    </View>
+    //                 <View style={styles.matchMiddle}>
+    //                     <Svg height="300" width="60" style={styles.svgContainer}>
+    //                         {connections.map((conn, index) => (
+    //                             <Line
+    //                                 key={index}
+    //                                 x1="10"
+    //                                 y1={40 + conn.leftIndex * 70}
+    //                                 x2="50"
+    //                                 y2={40 + conn.rightIndex * 70}
+    //                                 stroke="#10B981"
+    //                                 strokeWidth="3"
+    //                                 strokeDasharray="5,5"
+    //                             />
+    //                         ))}
+    //                         {isDragging && dragLine && (
+    //                             <Line
+    //                                 x1={dragLine.start.x}
+    //                                 y1={dragLine.start.y}
+    //                                 x2={dragLine.end.x}
+    //                                 y2={dragLine.end.y}
+    //                                 stroke="#EF4444"
+    //                                 strokeWidth="2"
+    //                                 strokeDasharray="3,3"
+    //                             />
+    //                         )}
+    //                     </Svg>
+    //                 </View>
 
-                    <View style={styles.rightColumn}>
-                        <View style={styles.columnHeader}>
-                            <Icon name="radio-button-checked" size={16} color="#8B5CF6" />
-                            <Text style={styles.columnHeaderText}>Column B</Text>
-                        </View>
-                        {rightItems.map((item, index) => {
-                            const isConnected = connections.some(conn => conn.right === item);
-                            return (
-                                <MatchItem
-                                    key={`right-${index}`}
-                                    item={item}
-                                    index={index}
-                                    type="right"
-                                    onStartDrag={handleStartDrag}
-                                    onDrag={handleDrag}
-                                    onEndDrag={handleEndDrag}
-                                    isConnected={isConnected}
-                                />
-                            );
-                        })}
-                    </View>
-                </View>
+    //                 <View style={styles.rightColumn}>
+    //                     <View style={styles.columnHeader}>
+    //                         <Icon name="radio-button-checked" size={16} color="#8B5CF6" />
+    //                         <Text style={styles.columnHeaderText}>Column B</Text>
+    //                     </View>
+    //                     {rightItems.map((item, index) => {
+    //                         const isConnected = connections.some(conn => conn.right === item);
+    //                         return (
+    //                             <MatchItem
+    //                                 key={`right-${index}`}
+    //                                 item={item}
+    //                                 index={index}
+    //                                 type="right"
+    //                                 onStartDrag={handleStartDrag}
+    //                                 onDrag={handleDrag}
+    //                                 onEndDrag={handleEndDrag}
+    //                                 isConnected={isConnected}
+    //                             />
+    //                         );
+    //                     })}
+    //                 </View>
+    //             </View>
 
-                {connections.length > 0 && (
-                    <TouchableOpacity
-                        style={styles.clearButton}
-                        onPress={() => setMatchConnections(prev => ({ ...prev, [questionKey]: [] }))}
-                    >
-                        <Icon name="refresh" size={20} color="#fff" />
-                        <Text style={styles.clearButtonText}>Clear All Matches</Text>
-                    </TouchableOpacity>
-                )}
+    //             {connections.length > 0 && (
+    //                 <TouchableOpacity
+    //                     style={styles.clearButton}
+    //                     onPress={() => setMatchConnections(prev => ({ ...prev, [questionKey]: [] }))}
+    //                 >
+    //                     <Icon name="refresh" size={20} color="#fff" />
+    //                     <Text style={styles.clearButtonText}>Clear All Matches</Text>
+    //                 </TouchableOpacity>
+    //             )}
 
-                <View style={styles.matchProgress}>
-                    <Text style={styles.matchProgressText}>
-                        {connections.length} of {leftItems.length} matches completed
-                    </Text>
-                </View>
-            </View>
-        );
-    };
+    //             <View style={styles.matchProgress}>
+    //                 <Text style={styles.matchProgressText}>
+    //                     {connections.length} of {leftItems.length} matches completed
+    //                 </Text>
+    //             </View>
+    //         </View>
+    //     );
+    // };
 
     const MCQQuestion: React.FC = () => {
         const question = examData.sections[currentSection].questions[currentQuestion];
@@ -537,7 +542,7 @@ const TeachApp: React.FC = () => {
             case 'fill_in_the_blanks':
                 return <FillInTheBlanks />;
             case 'match_the_following':
-                return <MatchTheFollowing />;
+                return navigation.navigate("MatchTheFollowing")
             case 'short_answer':
                 return <ShortAnswer />;
             case 'long_answer':
@@ -1189,4 +1194,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TeachApp;
+export default ExamApp;

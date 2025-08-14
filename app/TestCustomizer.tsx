@@ -1,14 +1,11 @@
+import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  Alert,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Alert, StyleSheet, } from 'react-native';
 import { Path, Svg } from 'react-native-svg';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types'; 
+
+type Navigation = NativeStackNavigationProp<RootStackParamList, 'TestCustomizer'>;
 
 interface Question {
   count: number;
@@ -135,6 +132,8 @@ const TestCustomizer: React.FC = () => {
     }
   });
 
+  const navigation = useNavigation<Navigation>();
+
   const predefinedExams: PredefinedExam[] = [
     { id: '25', title: '25 Marks Exam', description: 'Quick assessment test', marks: 25 },
     { id: '50', title: '50 Marks Exam', description: 'Standard test format', marks: 50 },
@@ -222,10 +221,12 @@ const TestCustomizer: React.FC = () => {
         return;
       }
       Alert.alert('Success', `Custom exam created with ${totalCalculated} marks`);
+      navigation.navigate('ExamApp');
     } else {
       const exam = predefinedExams.find(e => e.id === selectedType);
       if (exam) {
         Alert.alert('Success', `${exam.title} selected`);
+        navigation.navigate('ExamApp');
       }
     }
   };
@@ -423,6 +424,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#ffffff',
+    marginTop : 22,
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderBottomWidth: 1,
@@ -446,7 +448,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: {
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingTop : 20
   },
   sectionTitle: {
     fontSize: 18,
