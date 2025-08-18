@@ -1,4 +1,3 @@
-<<<<<<< HEAD:TeacherApp.tsx
 import React, { useState, useRef, useLayoutEffect } from 'react';
 import {
     View,
@@ -12,10 +11,6 @@ import {
     Alert,
     ActivityIndicator,
 } from 'react-native';
-=======
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Dimensions, Alert, ActivityIndicator, } from 'react-native';
->>>>>>> b51121d253a921f0b911ada3baeda9ee951a6ac9:app/TeacherApp.tsx
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -45,7 +40,8 @@ const TeacherApp: React.FC = () => {
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<'upload' | 'library' | 'analytics'>('upload');
 
-<<<<<<< HEAD:TeacherApp.tsx
+    const navigation = useNavigation<Navigation>();
+
     // 2. Use useRef for scroll position and ScrollView reference
     const scrollViewRef = useRef<ScrollView>(null);
     const scrollYPosition = useRef(0);
@@ -57,9 +53,6 @@ const TeacherApp: React.FC = () => {
     }, [teachFromContent, createExam, generateQuiz, createAssignment]);
 
 
-=======
-    const navigation = useNavigation<Navigation>();
->>>>>>> b51121d253a921f0b911ada3baeda9ee951a6ac9:app/TeacherApp.tsx
     const resetOptions = () => {
         setTeachFromContent(false);
         setCreateExam(false);
@@ -441,7 +434,7 @@ const TeacherApp: React.FC = () => {
                             </View>
                             <View>
                                 <Text style={styles.welcomeText}>Welcome back,</Text>
-                                <Text style={styles.teacherName}>Goku Thirumal</Text>
+                                <Text style={styles.teacherName}>Test</Text>
                             </View>
                         </View>
                     </View>
@@ -527,7 +520,7 @@ const styles = StyleSheet.create({
     },
     header: {
         backgroundColor: '#FFFFFF',
-        marginTop: 0,
+        marginTop: 20,
         paddingHorizontal: width * 0.05,
         paddingVertical: height * 0.02,
         borderBottomWidth: 1,
@@ -831,7 +824,7 @@ const styles = StyleSheet.create({
         marginLeft: width * 0.02,
     },
     checkboxContainer: {
-        marginTop:-30
+        marginTop: -30
     },
     checkboxItem: {
         flexDirection: 'row',
