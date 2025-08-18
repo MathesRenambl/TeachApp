@@ -10,13 +10,14 @@ import {
     Dimensions,
     Alert,
     ActivityIndicator,
+    Modal,
 } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types'; 
+import { RootStackParamList } from '../types';
 
 const { width, height } = Dimensions.get('window');
 type Navigation = NativeStackNavigationProp<RootStackParamList, 'TeacherApp'>;
@@ -28,6 +29,18 @@ interface UploadedFile {
     size: string;
     uploadDate: string;
     status: 'processing' | 'completed' | 'failed';
+    tags: {
+        standard: string;
+        subject: string;
+        topic: string;
+        difficulty: string;
+        language: string;
+    };
+}
+
+interface TagModalState {
+    visible: boolean;
+    uploadType: 'pdf' | 'image' | null;
 }
 
 const TeacherApp: React.FC = () => {
@@ -40,7 +53,34 @@ const TeacherApp: React.FC = () => {
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<'upload' | 'library' | 'analytics'>('upload');
 
+    // Tag selection states
+    const [tagModal, setTagModal] = useState<TagModalState>({ visible: false, uploadType: null });
+    const [selectedTags, setSelectedTags] = useState({
+        standard: '',
+        subject: '',
+        topic: '',
+        difficulty: '',
+        language: '',
+    });
+
     const navigation = useNavigation<Navigation>();
+
+
+    const generateUniqueId = () => {
+        const timestamp = Date.now();
+        const random1 = Math.random().toString(36).substr(2, 9);
+        const random2 = Math.random().toString(36).substr(2, 5);
+        return `${timestamp}-${random1}-${random2}`;
+    };
+
+    // Tag options
+    const tagOptions = {
+        standards: ['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12', 'Kindergarten', 'Pre-K'],
+        subjects: ['Mathematics', 'Science', 'English', 'Social Studies', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Computer Science', 'Art', 'Music', 'Physical Education', 'Language Arts'],
+        topics: ['Algebra', 'Geometry', 'Arithmetic', 'Fractions', 'Decimals', 'Equations', 'Graphs', 'Statistics', 'Probability', 'Reading Comprehension', 'Grammar', 'Vocabulary', 'Writing', 'Literature', 'Cell Biology', 'Genetics', 'Evolution', 'Ecology', 'Atomic Structure', 'Chemical Reactions', 'Organic Chemistry', 'Forces', 'Energy', 'Waves', 'Electricity', 'World Wars', 'Ancient Civilizations', 'Government', 'Economics', 'Climate', 'Continents', 'Countries'],
+        difficulties: ['Beginner', 'Intermediate', 'Advanced', 'Expert'],
+        languages: ['English', 'Tamil', 'Hindi', 'Telugu', 'Kannada', 'Malayalam', 'Bengali', 'Gujarati', 'Marathi', 'Punjabi'],
+    };
 
     // 2. Use useRef for scroll position and ScrollView reference
     const scrollViewRef = useRef<ScrollView>(null);
@@ -52,12 +92,52 @@ const TeacherApp: React.FC = () => {
         scrollViewRef.current?.scrollTo({ y: scrollYPosition.current, animated: false });
     }, [teachFromContent, createExam, generateQuiz, createAssignment]);
 
-
     const resetOptions = () => {
         setTeachFromContent(false);
         setCreateExam(false);
         setGenerateQuiz(false);
         setCreateAssignment(false);
+    };
+
+    const resetTags = () => {
+        setSelectedTags({
+            standard: '',
+            subject: '',
+            topic: '',
+            difficulty: '',
+            language: '',
+        });
+    };
+
+    const openTagModal = (type: 'pdf' | 'image') => {
+        setTagModal({ visible: true, uploadType: type });
+        resetTags();
+    };
+
+    const closeTagModal = () => {
+        setTagModal({ visible: false, uploadType: null });
+        resetTags();
+    };
+
+    const handleTagSelection = (category: keyof typeof selectedTags, value: string) => {
+        setSelectedTags(prev => ({
+            ...prev,
+            [category]: value,
+        }));
+    };
+
+    const validateAndProceedUpload = () => {
+        const { standard, subject, topic, difficulty, language } = selectedTags;
+
+        if (!standard || !subject || !topic || !difficulty || !language) {
+            Alert.alert('Incomplete Tags', 'Please select all required tags before uploading.');
+            return;
+        }
+
+        if (tagModal.uploadType) {
+            handleFileUpload(tagModal.uploadType);
+            closeTagModal();
+        }
     };
 
     const handleFileUpload = async (type: 'pdf' | 'image') => {
@@ -84,12 +164,13 @@ const TeacherApp: React.FC = () => {
                 setUploadProgress(0);
 
                 const mockFile: UploadedFile = {
-                    id: Date.now().toString(),
+                    id: generateUniqueId(),
                     name: file.name || (type === 'pdf' ? 'Document.pdf' : 'Image.jpg'),
                     type,
                     size: file.size ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : '1.2 MB',
                     uploadDate: new Date().toLocaleDateString(),
                     status: 'processing',
+                    tags: selectedTags,
                 };
 
                 const progressInterval = setInterval(() => {
@@ -126,7 +207,163 @@ const TeacherApp: React.FC = () => {
                 },
             ]
         );
-    };
+    }; // Fixed: Added missing closing brace
+
+    const TagSelectionModal = () => (
+        <View style={[styles.modalOverlay, { display: tagModal.visible ? 'flex' : 'none' }]}>
+            <View style={styles.modalContainer}>
+                <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>
+                        Select Tags for {tagModal.uploadType === 'pdf' ? 'PDF' : 'Image'} Upload
+                    </Text>
+                    <TouchableOpacity onPress={closeTagModal} style={styles.modalCloseButton}>
+                        <Icon name="close" size={24} color="#7F8C8D" />
+                    </TouchableOpacity>
+                </View>
+
+                <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+                    {/* Standard Selection */}
+                    <View style={styles.tagSection}>
+                        <Text style={styles.tagSectionTitle}>Standard/Class *</Text>
+                        <View style={styles.tagOptionsContainer}>
+                            {tagOptions.standards.map((standard) => (
+                                <TouchableOpacity
+                                    key={standard}
+                                    style={[
+                                        styles.tagOption,
+                                        selectedTags.standard === standard && styles.tagOptionSelected,
+                                    ]}
+                                    onPress={() => handleTagSelection('standard', standard)}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.tagOptionText,
+                                            selectedTags.standard === standard && styles.tagOptionTextSelected,
+                                        ]}
+                                    >
+                                        {standard}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* Subject Selection */}
+                    <View style={styles.tagSection}>
+                        <Text style={styles.tagSectionTitle}>Subject *</Text>
+                        <View style={styles.tagOptionsContainer}>
+                            {tagOptions.subjects.map((subject) => (
+                                <TouchableOpacity
+                                    key={subject}
+                                    style={[
+                                        styles.tagOption,
+                                        selectedTags.subject === subject && styles.tagOptionSelected,
+                                    ]}
+                                    onPress={() => handleTagSelection('subject', subject)}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.tagOptionText,
+                                            selectedTags.subject === subject && styles.tagOptionTextSelected,
+                                        ]}
+                                    >
+                                        {subject}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* Topic Selection */}
+                    <View style={styles.tagSection}>
+                        <Text style={styles.tagSectionTitle}>Topic *</Text>
+                        <View style={styles.tagOptionsContainer}>
+                            {tagOptions.topics.map((topic) => (
+                                <TouchableOpacity
+                                    key={topic}
+                                    style={[
+                                        styles.tagOption,
+                                        selectedTags.topic === topic && styles.tagOptionSelected,
+                                    ]}
+                                    onPress={() => handleTagSelection('topic', topic)}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.tagOptionText,
+                                            selectedTags.topic === topic && styles.tagOptionTextSelected,
+                                        ]}
+                                    >
+                                        {topic}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* Difficulty Selection */}
+                    <View style={styles.tagSection}>
+                        <Text style={styles.tagSectionTitle}>Difficulty Level *</Text>
+                        <View style={styles.tagOptionsContainer}>
+                            {tagOptions.difficulties.map((difficulty) => (
+                                <TouchableOpacity
+                                    key={difficulty}
+                                    style={[
+                                        styles.tagOption,
+                                        selectedTags.difficulty === difficulty && styles.tagOptionSelected,
+                                    ]}
+                                    onPress={() => handleTagSelection('difficulty', difficulty)}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.tagOptionText,
+                                            selectedTags.difficulty === difficulty && styles.tagOptionTextSelected,
+                                        ]}
+                                    >
+                                        {difficulty}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* Language Selection */}
+                    <View style={styles.tagSection}>
+                        <Text style={styles.tagSectionTitle}>Language *</Text>
+                        <View style={styles.tagOptionsContainer}>
+                            {tagOptions.languages.map((language) => (
+                                <TouchableOpacity
+                                    key={language}
+                                    style={[
+                                        styles.tagOption,
+                                        selectedTags.language === language && styles.tagOptionSelected,
+                                    ]}
+                                    onPress={() => handleTagSelection('language', language)}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.tagOptionText,
+                                            selectedTags.language === language && styles.tagOptionTextSelected,
+                                        ]}
+                                    >
+                                        {language}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+                </ScrollView>
+
+                <View style={styles.modalActions}>
+                    <TouchableOpacity style={styles.modalCancelButton} onPress={closeTagModal}>
+                        <Text style={styles.modalCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.modalConfirmButton} onPress={validateAndProceedUpload}>
+                        <Text style={styles.modalConfirmText}>Upload File</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </View>
+    );
 
     const handleProcessContent = () => {
         if (selectedFiles.length === 0) {
@@ -200,7 +437,7 @@ const TeacherApp: React.FC = () => {
                 <View style={styles.uploadButtons}>
                     <TouchableOpacity
                         style={styles.uploadButton}
-                        onPress={() => handleFileUpload('pdf')}
+                        onPress={() => openTagModal('pdf')}
                         disabled={uploadProgress !== null}
                         activeOpacity={0.7}
                     >
@@ -213,7 +450,7 @@ const TeacherApp: React.FC = () => {
 
                     <TouchableOpacity
                         style={styles.uploadButton}
-                        onPress={() => handleFileUpload('image')}
+                        onPress={() => openTagModal('image')}
                         disabled={uploadProgress !== null}
                         activeOpacity={0.7}
                     >
@@ -257,6 +494,17 @@ const TeacherApp: React.FC = () => {
                                     <Text style={styles.fileSize}>{file.size}</Text>
                                     <Text style={styles.fileDot}>•</Text>
                                     <Text style={styles.fileDate}>{file.uploadDate}</Text>
+                                </View>
+                                <View style={styles.fileTags}>
+                                    <View style={styles.tag}>
+                                        <Text style={styles.tagText}>{file.tags.standard}</Text>
+                                    </View>
+                                    <View style={styles.tag}>
+                                        <Text style={styles.tagText}>{file.tags.subject}</Text>
+                                    </View>
+                                    <View style={styles.tag}>
+                                        <Text style={styles.tagText}>{file.tags.topic}</Text>
+                                    </View>
                                 </View>
                             </View>
                             <View
@@ -434,7 +682,7 @@ const TeacherApp: React.FC = () => {
                             </View>
                             <View>
                                 <Text style={styles.welcomeText}>Welcome back,</Text>
-                                <Text style={styles.teacherName}>Test</Text>
+                                <Text style={styles.teacherName}>Goku Thirumal</Text>
                             </View>
                         </View>
                     </View>
@@ -496,11 +744,11 @@ const TeacherApp: React.FC = () => {
                 {activeTab === 'library' && <LibraryTab />}
                 {activeTab === 'analytics' && <AnalyticsTab />}
             </View>
+            {TagSelectionModal()}
         </View>
     );
 };
 
-// Styles remain unchanged
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -520,7 +768,7 @@ const styles = StyleSheet.create({
     },
     header: {
         backgroundColor: '#FFFFFF',
-        marginTop: 20,
+        marginTop: 0,
         paddingHorizontal: width * 0.05,
         paddingVertical: height * 0.02,
         borderBottomWidth: 1,
@@ -917,6 +1165,143 @@ const styles = StyleSheet.create({
         color: '#7F8C8D',
         textAlign: 'center',
         lineHeight: height * 0.03,
+    },
+    fileTags: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginTop: height * 0.008,
+        gap: width * 0.02,
+    },
+    tag: {
+        backgroundColor: '#E3F2FD',
+        paddingHorizontal: width * 0.02,
+        paddingVertical: height * 0.003,
+        borderRadius: width * 0.01,
+    },
+    tagText: {
+        fontSize: width * 0.03,
+        color: '#1976D2',
+        fontWeight: '500',
+    },
+    modalOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
+    modalContainer: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: width * 0.04,
+        width: width * 0.9,
+        maxHeight: height * 0.8,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 5,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 10,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: width * 0.05,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E9ECEF',
+    },
+    modalTitle: {
+        fontSize: width * 0.045,
+        fontWeight: '600',
+        color: '#2C3E50',
+        flex: 1,
+    },
+    modalCloseButton: {
+        width: width * 0.08,
+        height: width * 0.08,
+        borderRadius: width * 0.04,
+        backgroundColor: '#F8F9FA',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        maxHeight: height * 0.55,
+        paddingHorizontal: width * 0.05,
+    },
+    tagSection: {
+        marginVertical: height * 0.02,
+    },
+    tagSectionTitle: {
+        fontSize: width * 0.042,
+        fontWeight: '600',
+        color: '#2C3E50',
+        marginBottom: height * 0.015,
+    },
+    tagOptionsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: width * 0.02,
+    },
+    tagOption: {
+        paddingHorizontal: width * 0.04,
+        paddingVertical: height * 0.012,
+        borderRadius: width * 0.02,
+        backgroundColor: '#F8F9FA',
+        borderWidth: 1,
+        borderColor: '#E9ECEF',
+        marginBottom: height * 0.01,
+    },
+    tagOptionSelected: {
+        backgroundColor: '#4A90E2',
+        borderColor: '#4A90E2',
+    },
+    tagOptionText: {
+        fontSize: width * 0.035,
+        color: '#7F8C8D',
+        fontWeight: '500',
+    },
+    tagOptionTextSelected: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+    },
+    modalActions: {
+        flexDirection: 'row',
+        padding: width * 0.05,
+        gap: width * 0.03,
+        borderTopWidth: 1,
+        borderTopColor: '#E9ECEF',
+    },
+    modalCancelButton: {
+        flex: 1,
+        paddingVertical: height * 0.015,
+        borderRadius: width * 0.02,
+        backgroundColor: '#F8F9FA',
+        borderWidth: 1,
+        borderColor: '#E9ECEF',
+        alignItems: 'center',
+    },
+    modalCancelText: {
+        fontSize: width * 0.04,
+        color: '#7F8C8D',
+        fontWeight: '600',
+    },
+    modalConfirmButton: {
+        flex: 1,
+        paddingVertical: height * 0.015,
+        borderRadius: width * 0.02,
+        backgroundColor: '#4A90E2',
+        alignItems: 'center',
+    },
+    modalConfirmText: {
+        fontSize: width * 0.04,
+        color: '#FFFFFF',
+        fontWeight: '600',
     },
 });
 
