@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import {
     View,
     Text,
@@ -36,6 +36,17 @@ const TeacherApp: React.FC = () => {
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<'upload' | 'library' | 'analytics'>('upload');
 
+    // 2. Use useRef for scroll position and ScrollView reference
+    const scrollViewRef = useRef<ScrollView>(null);
+    const scrollYPosition = useRef(0);
+
+    // 3. useEffect to restore scroll position after a re-render from state change
+    useLayoutEffect(() => {
+        // This now runs before the user sees the updated UI, eliminating the flicker.
+        scrollViewRef.current?.scrollTo({ y: scrollYPosition.current, animated: false });
+    }, [teachFromContent, createExam, generateQuiz, createAssignment]);
+
+
     const resetOptions = () => {
         setTeachFromContent(false);
         setCreateExam(false);
@@ -64,7 +75,6 @@ const TeacherApp: React.FC = () => {
                 const file = result.assets[0];
 
                 resetOptions();
-
                 setUploadProgress(0);
 
                 const mockFile: UploadedFile = {
@@ -148,6 +158,7 @@ const TeacherApp: React.FC = () => {
         );
     };
 
+    // 4. Simplified handlers - they only need to update state.
     const clearAllOptions = () => {
         resetOptions();
     };
@@ -156,21 +167,22 @@ const TeacherApp: React.FC = () => {
         setter((prev: any) => !prev);
     };
 
-    const hasAnyOptionSelected = teachFromContent || createExam || generateQuiz || createAssignment;
-
-    // Prevent ScrollView from reacting to touch events in the actions section
-    const stopPropagation = {
-        onStartShouldSetResponder: () => true,
-        onResponderTerminationRequest: () => false,
+    const handleClearButtonPress = () => {
+        clearAllOptions();
     };
+
+    const hasAnyOptionSelected = teachFromContent || createExam || generateQuiz || createAssignment;
 
     const UploadTab = () => (
         <ScrollView
+            ref={scrollViewRef}
             style={styles.tabContent}
             contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="always" // Changed to 'always' to prevent tap interference
-            keyboardDismissMode="none" // Disable keyboard-related scrolling
-            scrollEventThrottle={16} // Improve scroll performance
+            keyboardShouldPersistTaps="always"
+            keyboardDismissMode="none"
+            scrollEventThrottle={16}
+            // 5. Add onScroll to track the position and store it in the ref
+            onScroll={(e) => (scrollYPosition.current = e.nativeEvent.contentOffset.y)}
         >
             <View style={styles.uploadSection}>
                 <Text style={styles.sectionTitle}>Interactive Learning Made Easy</Text>
@@ -275,7 +287,7 @@ const TeacherApp: React.FC = () => {
             )}
 
             {selectedFiles.length > 0 && (
-                <View style={styles.actionsSection} {...stopPropagation}>
+                <View style={styles.actionsSection}>
                     <View style={styles.sectionHeaderMain}>
                         <Text style={styles.sectionTitle}>What would you like to create?</Text>
                         <Text style={styles.sectionSubtitle}>
@@ -317,46 +329,12 @@ const TeacherApp: React.FC = () => {
                             </View>
                             <Icon name="assignment" size={24} color="#E67E22" />
                         </TouchableOpacity>
-
-                        {/* <TouchableOpacity
-                            style={styles.checkboxItem}
-                            onPress={() => handleCheckboxPress(setGenerateQuiz)}
-                            activeOpacity={0.8}
-                        >
-                            <View style={[styles.checkbox, generateQuiz && styles.checkboxSelected]}>
-                                {generateQuiz && <Icon name="check" size={16} color="#FFFFFF" />}
-                            </View>
-                            <View style={styles.checkboxContent}>
-                                <Text style={styles.checkboxTitle}>Quick Quiz Generator</Text>
-                                <Text style={styles.checkboxDescription}>
-                                    Create short quizzes for quick assessments and practice tests
-                                </Text>
-                            </View>
-                            <Icon name="quiz" size={24} color="#1ABC9C" />
-                        </TouchableOpacity> */}
-
-                        {/* <TouchableOpacity
-                            style={styles.checkboxItem}
-                            onPress={() => handleCheckboxPress(setCreateAssignment)}
-                            activeOpacity={0.8}
-                        >
-                            <View style={[styles.checkbox, createAssignment && styles.checkboxSelected]}>
-                                {createAssignment && <Icon name="check" size={16} color="#FFFFFF" />}
-                            </View>
-                            <View style={styles.checkboxContent}>
-                                <Text style={styles.checkboxTitle}>Assignment Tasks</Text>
-                                <Text style={styles.checkboxDescription}>
-                                    Generate homework assignments and practice exercises
-                                </Text>
-                            </View>
-                            <Icon name="task" size={24} color="#E74C3C" />
-                        </TouchableOpacity> */}
                     </View>
 
                     {hasAnyOptionSelected && (
                         <TouchableOpacity
                             style={styles.clearButton}
-                            onPress={clearAllOptions}
+                            onPress={handleClearButtonPress}
                             activeOpacity={0.7}
                         >
                             <Icon name="clear-all" size={18} color="#E74C3C" />
@@ -393,8 +371,6 @@ const TeacherApp: React.FC = () => {
                 <ScrollView
                     style={styles.tabContent}
                     contentContainerStyle={styles.scrollContent}
-                    keyboardShouldPersistTaps="always"
-                    keyboardDismissMode="none"
                 >
                     <View style={styles.filesSection}>
                         <Text style={styles.sectionTitle}>Generated Content ({libraryFiles.length})</Text>
@@ -587,7 +563,7 @@ const styles = StyleSheet.create({
         borderBottomColor: 'transparent',
     },
     activeTab: {
-        boarderBottomColor: '#4A90E2',
+        borderBottomColor: '#4A90E2',
     },
     tabText: {
         fontSize: width * 0.035,
@@ -701,6 +677,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#E9ECEF',
         borderRadius: height * 0.004,
     },
+
+
     progressFill: {
         height: '100%',
         backgroundColor: '#4A90E2',
@@ -839,7 +817,7 @@ const styles = StyleSheet.create({
         marginLeft: width * 0.02,
     },
     checkboxContainer: {
-        marginTop: height * 0.02,
+        marginTop:-30
     },
     checkboxItem: {
         flexDirection: 'row',
