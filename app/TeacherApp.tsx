@@ -1,3 +1,4 @@
+<<<<<<< HEAD:TeacherApp.tsx
 import React, { useState, useRef, useLayoutEffect } from 'react';
 import {
     View,
@@ -11,11 +12,19 @@ import {
     Alert,
     ActivityIndicator,
 } from 'react-native';
+=======
+import React, { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Dimensions, Alert, ActivityIndicator, } from 'react-native';
+>>>>>>> b51121d253a921f0b911ada3baeda9ee951a6ac9:app/TeacherApp.tsx
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types'; 
 
 const { width, height } = Dimensions.get('window');
+type Navigation = NativeStackNavigationProp<RootStackParamList, 'TeacherApp'>;
 
 interface UploadedFile {
     id: string;
@@ -36,6 +45,7 @@ const TeacherApp: React.FC = () => {
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<'upload' | 'library' | 'analytics'>('upload');
 
+<<<<<<< HEAD:TeacherApp.tsx
     // 2. Use useRef for scroll position and ScrollView reference
     const scrollViewRef = useRef<ScrollView>(null);
     const scrollYPosition = useRef(0);
@@ -47,6 +57,9 @@ const TeacherApp: React.FC = () => {
     }, [teachFromContent, createExam, generateQuiz, createAssignment]);
 
 
+=======
+    const navigation = useNavigation<Navigation>();
+>>>>>>> b51121d253a921f0b911ada3baeda9ee951a6ac9:app/TeacherApp.tsx
     const resetOptions = () => {
         setTeachFromContent(false);
         setCreateExam(false);
@@ -152,6 +165,7 @@ const TeacherApp: React.FC = () => {
                         setSelectedFiles([]);
                         resetOptions();
                         Alert.alert('Success', 'Content has been created and moved to the Library.');
+                        navigation.navigate('TestCustomizer');
                     },
                 },
             ]
@@ -513,7 +527,7 @@ const styles = StyleSheet.create({
     },
     header: {
         backgroundColor: '#FFFFFF',
-        marginTop: 30,
+        marginTop: 0,
         paddingHorizontal: width * 0.05,
         paddingVertical: height * 0.02,
         borderBottomWidth: 1,
