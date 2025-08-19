@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
+// import { router, useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 type Navigation = NativeStackNavigationProp<RootStackParamList, 'TeacherApp'>;
@@ -20,8 +21,7 @@ interface UploadedFile {
     tags: {
         standard: string;
         subject: string;
-        topic: string;
-        difficulty: string;
+        chapter: string;
         language: string;
     };
 }
@@ -39,20 +39,18 @@ const TeacherApp: React.FC = () => {
     const [generateQuiz, setGenerateQuiz] = useState(false);
     const [createAssignment, setCreateAssignment] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-    const [activeTab, setActiveTab] = useState<'upload' | 'library' | 'analytics'>('upload');
-
-    // Tag selection states
+    const [activeTab, setActiveTab] = useState<'upload' | 'library' | 'assessment'>('upload');
+    // const route = useRouter();
+    // Tag selection states - FIXED: Made consistent property names
     const [tagModal, setTagModal] = useState<TagModalState>({ visible: false, uploadType: null });
     const [selectedTags, setSelectedTags] = useState({
         standard: '',
         subject: '',
-        topic: '',
-        difficulty: '',
+        chapter: '', // Changed from 'chapters' to 'topic'
         language: '',
     });
 
     const navigation = useNavigation<Navigation>();
-
 
     const generateUniqueId = () => {
         const timestamp = Date.now();
@@ -65,8 +63,7 @@ const TeacherApp: React.FC = () => {
     const tagOptions = {
         standards: ['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12', 'Kindergarten', 'Pre-K'],
         subjects: ['Mathematics', 'Science', 'English', 'Social Studies', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Computer Science', 'Art', 'Music', 'Physical Education', 'Language Arts'],
-        topics: ['Algebra', 'Geometry', 'Arithmetic', 'Fractions', 'Decimals', 'Equations', 'Graphs', 'Statistics', 'Probability', 'Reading Comprehension', 'Grammar', 'Vocabulary', 'Writing', 'Literature', 'Cell Biology', 'Genetics', 'Evolution', 'Ecology', 'Atomic Structure', 'Chemical Reactions', 'Organic Chemistry', 'Forces', 'Energy', 'Waves', 'Electricity', 'World Wars', 'Ancient Civilizations', 'Government', 'Economics', 'Climate', 'Continents', 'Countries'],
-        difficulties: ['Beginner', 'Intermediate', 'Advanced', 'Expert'],
+        chapters: ['Algebra', 'Geometry', 'Arithmetic', 'Fractions', 'Decimals', 'Equations', 'Graphs', 'Statistics', 'Probability', 'Reading Comprehension', 'Grammar', 'Vocabulary', 'Writing', 'Literature', 'Cell Biology', 'Genetics', 'Evolution', 'Ecology', 'Atomic Structure', 'Chemical Reactions', 'Organic Chemistry', 'Forces', 'Energy', 'Waves', 'Electricity', 'World Wars', 'Ancient Civilizations', 'Government', 'Economics', 'Climate', 'Continents', 'Countries'],
         languages: ['English', 'Tamil', 'Hindi', 'Telugu', 'Kannada', 'Malayalam', 'Bengali', 'Gujarati', 'Marathi', 'Punjabi'],
     };
 
@@ -91,8 +88,7 @@ const TeacherApp: React.FC = () => {
         setSelectedTags({
             standard: '',
             subject: '',
-            topic: '',
-            difficulty: '',
+            chapter: '',
             language: '',
         });
     };
@@ -114,10 +110,11 @@ const TeacherApp: React.FC = () => {
         }));
     };
 
+    // FIXED: Updated validation to match the actual selectedTags properties
     const validateAndProceedUpload = () => {
-        const { standard, subject, topic, difficulty, language } = selectedTags;
+        const { standard, subject, chapter, language } = selectedTags;
 
-        if (!standard || !subject || !topic || !difficulty || !language) {
+        if (!standard || !subject || !chapter || !language) {
             Alert.alert('Incomplete Tags', 'Please select all required tags before uploading.');
             return;
         }
@@ -195,7 +192,7 @@ const TeacherApp: React.FC = () => {
                 },
             ]
         );
-    }; // Fixed: Added missing closing brace
+    };
 
     const TagSelectionModal = () => (
         <View style={[styles.modalOverlay, { display: tagModal.visible ? 'flex' : 'none' }]}>
@@ -262,52 +259,26 @@ const TeacherApp: React.FC = () => {
                         </View>
                     </View>
 
-                    {/* Topic Selection */}
+                    {/* Topic Selection - FIXED: Updated to use 'topic' consistently */}
                     <View style={styles.tagSection}>
-                        <Text style={styles.tagSectionTitle}>Topic *</Text>
+                        <Text style={styles.tagSectionTitle}>Chapter *</Text>
                         <View style={styles.tagOptionsContainer}>
-                            {tagOptions.topics.map((topic) => (
+                            {tagOptions.chapters.map((chapter) => (
                                 <TouchableOpacity
-                                    key={topic}
+                                    key={chapter}
                                     style={[
                                         styles.tagOption,
-                                        selectedTags.topic === topic && styles.tagOptionSelected,
+                                        selectedTags.chapter === chapter && styles.tagOptionSelected,
                                     ]}
-                                    onPress={() => handleTagSelection('topic', topic)}
+                                    onPress={() => handleTagSelection('chapter', chapter)}
                                 >
                                     <Text
                                         style={[
                                             styles.tagOptionText,
-                                            selectedTags.topic === topic && styles.tagOptionTextSelected,
+                                            selectedTags.chapter === chapter && styles.tagOptionTextSelected,
                                         ]}
                                     >
-                                        {topic}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
-
-                    {/* Difficulty Selection */}
-                    <View style={styles.tagSection}>
-                        <Text style={styles.tagSectionTitle}>Difficulty Level *</Text>
-                        <View style={styles.tagOptionsContainer}>
-                            {tagOptions.difficulties.map((difficulty) => (
-                                <TouchableOpacity
-                                    key={difficulty}
-                                    style={[
-                                        styles.tagOption,
-                                        selectedTags.difficulty === difficulty && styles.tagOptionSelected,
-                                    ]}
-                                    onPress={() => handleTagSelection('difficulty', difficulty)}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.tagOptionText,
-                                            selectedTags.difficulty === difficulty && styles.tagOptionTextSelected,
-                                        ]}
-                                    >
-                                        {difficulty}
+                                        {chapter}
                                     </Text>
                                 </TouchableOpacity>
                             ))}
@@ -390,7 +361,6 @@ const TeacherApp: React.FC = () => {
         );
     };
 
-    // 4. Simplified handlers - they only need to update state.
     const clearAllOptions = () => {
         resetOptions();
     };
@@ -413,7 +383,6 @@ const TeacherApp: React.FC = () => {
             keyboardShouldPersistTaps="always"
             keyboardDismissMode="none"
             scrollEventThrottle={16}
-            // 5. Add onScroll to track the position and store it in the ref
             onScroll={(e) => (scrollYPosition.current = e.nativeEvent.contentOffset.y)}
         >
             <View style={styles.uploadSection}>
@@ -491,7 +460,7 @@ const TeacherApp: React.FC = () => {
                                         <Text style={styles.tagText}>{file.tags.subject}</Text>
                                     </View>
                                     <View style={styles.tag}>
-                                        <Text style={styles.tagText}>{file.tags.topic}</Text>
+                                        <Text style={styles.tagText}>{file.tags.chapter}</Text>
                                     </View>
                                 </View>
                             </View>
@@ -646,14 +615,18 @@ const TeacherApp: React.FC = () => {
         </View>
     );
 
-    const AnalyticsTab = () => (
+    // CHANGED: Analytics to Assessment
+    const AssessmentTab = () => (
         <View style={styles.tabContent}>
             <View style={styles.emptyState}>
-                <Icon name="analytics" size={width * 0.16} color="#CCCCCC" />
-                <Text style={styles.emptyStateTitle}>Analytics Dashboard</Text>
+                <Icon name="assessment" size={width * 0.16} color="#CCCCCC" />
+                <Text style={styles.emptyStateTitle}>Assessment Dashboard</Text>
                 <Text style={styles.emptyStateDescription}>
-                    Track student performance, content usage, and engagement metrics
+                    Track student performance, assessment results, and learning progress metrics
                 </Text>
+                <TouchableOpacity onPress={()=> navigation.push("Assessment")}>
+                    <Text>Assessment</Text>
+                    </TouchableOpacity>
             </View>
         </View>
     );
@@ -670,7 +643,7 @@ const TeacherApp: React.FC = () => {
                             </View>
                             <View>
                                 <Text style={styles.welcomeText}>Welcome back,</Text>
-                                <Text style={styles.teacherName}>Goku Thirumal</Text>
+                                <Text style={styles.teacherName}>Gokul Thirumal</Text>
                             </View>
                         </View>
                     </View>
@@ -709,19 +682,20 @@ const TeacherApp: React.FC = () => {
                         </Text>
                     </TouchableOpacity>
 
+                    {/* CHANGED: Analytics to Assessment */}
                     <TouchableOpacity
-                        style={[styles.tab, activeTab === 'analytics' && styles.activeTab]}
-                        onPress={() => setActiveTab('analytics')}
+                        style={[styles.tab, activeTab === 'assessment' && styles.activeTab]}
+                        onPress={() => setActiveTab('assessment')}
                     >
                         <Icon
-                            name="analytics"
+                            name="assessment"
                             size={20}
-                            color={activeTab === 'analytics' ? '#4A90E2' : '#95A5A6'}
+                            color={activeTab === 'assessment' ? '#4A90E2' : '#95A5A6'}
                         />
                         <Text
-                            style={[styles.tabText, activeTab === 'analytics' && styles.activeTabText]}
+                            style={[styles.tabText, activeTab === 'assessment' && styles.activeTabText]}
                         >
-                            Analytics
+                            Assessment
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -730,12 +704,12 @@ const TeacherApp: React.FC = () => {
             <View style={styles.contentContainer}>
                 {activeTab === 'upload' && <UploadTab />}
                 {activeTab === 'library' && <LibraryTab />}
-                {activeTab === 'analytics' && <AnalyticsTab />}
+                {activeTab === 'assessment' && <AssessmentTab />}
             </View>
             {TagSelectionModal()}
         </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {
