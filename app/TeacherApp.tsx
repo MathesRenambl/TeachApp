@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
+// import { router, useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 type Navigation = NativeStackNavigationProp<RootStackParamList, 'TeacherApp'>;
@@ -51,7 +52,7 @@ const TeacherApp: React.FC = () => {
     const [createAssignment, setCreateAssignment] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<'upload' | 'library' | 'assessment'>('upload');
-
+    // const route = useRouter();
     // Tag selection states - FIXED: Made consistent property names
     const [tagModal, setTagModal] = useState<TagModalState>({ visible: false, uploadType: null });
     const [selectedTags, setSelectedTags] = useState({
@@ -635,6 +636,9 @@ const TeacherApp: React.FC = () => {
                 <Text style={styles.emptyStateDescription}>
                     Track student performance, assessment results, and learning progress metrics
                 </Text>
+                <TouchableOpacity onPress={()=> navigation.push("Assessment")}>
+                    <Text>Assessment</Text>
+                    </TouchableOpacity>
             </View>
         </View>
     );
