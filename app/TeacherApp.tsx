@@ -1616,7 +1616,6 @@ const styles = StyleSheet.create({
     },
     assessmentCreationView: {
         flex: 1,
-        paddingHorizontal: 20,
     },
     assessmentHeader: {
         flexDirection: 'row',
