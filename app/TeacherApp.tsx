@@ -1,24 +1,14 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
-import {
-    View,
-    Text,
-    ScrollView,
-    TouchableOpacity,
-    StyleSheet,
-    SafeAreaView,
-    StatusBar,
-    Dimensions,
-    Alert,
-    ActivityIndicator,
-    Modal,
-} from 'react-native';
+import {View,Text,ScrollView,TouchableOpacity,StyleSheet,SafeAreaView,StatusBar,Dimensions,Alert,ActivityIndicator,Modal,} from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
-// import { router, useRouter } from 'expo-router';
+
+// Import Library component (you'll need to adjust the import path)
+import Library from './Library'; // Adjust this import path as needed
 
 const { width, height } = Dimensions.get('window');
 type Navigation = NativeStackNavigationProp<RootStackParamList, 'TeacherApp'>;
@@ -52,13 +42,13 @@ const TeacherApp: React.FC = () => {
     const [createAssignment, setCreateAssignment] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<'upload' | 'library' | 'assessment'>('upload');
-    // const route = useRouter();
-    // Tag selection states - FIXED: Made consistent property names
+    
+    // Tag selection states
     const [tagModal, setTagModal] = useState<TagModalState>({ visible: false, uploadType: null });
     const [selectedTags, setSelectedTags] = useState({
         standard: '',
         subject: '',
-        chapter: '', // Changed from 'chapters' to 'topic'
+        chapter: '',
         language: '',
     });
 
@@ -79,13 +69,12 @@ const TeacherApp: React.FC = () => {
         languages: ['English', 'Tamil', 'Hindi', 'Telugu', 'Kannada', 'Malayalam', 'Bengali', 'Gujarati', 'Marathi', 'Punjabi'],
     };
 
-    // 2. Use useRef for scroll position and ScrollView reference
+    // Use useRef for scroll position and ScrollView reference
     const scrollViewRef = useRef<ScrollView>(null);
     const scrollYPosition = useRef(0);
 
-    // 3. useEffect to restore scroll position after a re-render from state change
+    // useEffect to restore scroll position after a re-render from state change
     useLayoutEffect(() => {
-        // This now runs before the user sees the updated UI, eliminating the flicker.
         scrollViewRef.current?.scrollTo({ y: scrollYPosition.current, animated: false });
     }, [teachFromContent, createExam, generateQuiz, createAssignment]);
 
@@ -122,7 +111,6 @@ const TeacherApp: React.FC = () => {
         }));
     };
 
-    // FIXED: Updated validation to match the actual selectedTags properties
     const validateAndProceedUpload = () => {
         const { standard, subject, chapter, language } = selectedTags;
 
@@ -271,7 +259,7 @@ const TeacherApp: React.FC = () => {
                         </View>
                     </View>
 
-                    {/* Topic Selection - FIXED: Updated to use 'topic' consistently */}
+                    {/* Chapter Selection */}
                     <View style={styles.tagSection}>
                         <Text style={styles.tagSectionTitle}>Chapter *</Text>
                         <View style={styles.tagOptionsContainer}>
@@ -581,53 +569,13 @@ const TeacherApp: React.FC = () => {
         </ScrollView>
     );
 
+    // Updated LibraryTab to use the Library component
     const LibraryTab = () => (
         <View style={styles.tabContent}>
-            {libraryFiles.length === 0 ? (
-                <View style={styles.emptyState}>
-                    <Icon name="folder-open" size={width * 0.16} color="#CCCCCC" />
-                    <Text style={styles.emptyStateTitle}>Content Library</Text>
-                    <Text style={styles.emptyStateDescription}>
-                        Your generated teaching materials, exams, and assignments will appear here
-                    </Text>
-                </View>
-            ) : (
-                <ScrollView
-                    style={styles.tabContent}
-                    contentContainerStyle={styles.scrollContent}
-                >
-                    <View style={styles.filesSection}>
-                        <Text style={styles.sectionTitle}>Generated Content ({libraryFiles.length})</Text>
-                        {libraryFiles.map(file => (
-                            <View key={file.id} style={styles.fileItem}>
-                                <View style={styles.fileIcon}>
-                                    <Icon
-                                        name={file.type === 'pdf' ? 'picture-as-pdf' : 'image'}
-                                        size={24}
-                                        color={file.type === 'pdf' ? '#E74C3C' : '#27AE60'}
-                                    />
-                                </View>
-                                <View style={styles.fileInfo}>
-                                    <Text style={styles.fileName}>{file.name}</Text>
-                                    <View style={styles.fileDetails}>
-                                        <Text style={styles.fileSize}>{file.size}</Text>
-                                        <Text style={styles.fileDot}>•</Text>
-                                        <Text style={styles.fileDate}>{file.uploadDate}</Text>
-                                    </View>
-                                </View>
-                                <View style={[styles.statusBadge, styles.statusCompleted]}>
-                                    <Icon name="check-circle" size={16} color="#27AE60" />
-                                    <Text style={[styles.statusText, styles.statusTextCompleted]}>Generated</Text>
-                                </View>
-                            </View>
-                        ))}
-                    </View>
-                </ScrollView>
-            )}
+            <Library />
         </View>
     );
 
-    // CHANGED: Analytics to Assessment
     const AssessmentTab = () => (
         <View style={styles.tabContent}>
             <View style={styles.emptyState}>
@@ -638,7 +586,7 @@ const TeacherApp: React.FC = () => {
                 </Text>
                 <TouchableOpacity onPress={()=> navigation.push("Assessment")}>
                     <Text>Assessment</Text>
-                    </TouchableOpacity>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -694,7 +642,6 @@ const TeacherApp: React.FC = () => {
                         </Text>
                     </TouchableOpacity>
 
-                    {/* CHANGED: Analytics to Assessment */}
                     <TouchableOpacity
                         style={[styles.tab, activeTab === 'assessment' && styles.activeTab]}
                         onPress={() => setActiveTab('assessment')}
@@ -906,8 +853,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#E9ECEF',
         borderRadius: height * 0.004,
     },
-
-
     progressFill: {
         height: '100%',
         backgroundColor: '#4A90E2',
