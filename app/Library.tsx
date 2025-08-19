@@ -301,7 +301,7 @@ const LibraryTab: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#ECEFF1',
+    backgroundColor: '#FFFFFF',
   },
   header: {
     paddingVertical: 20,
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#CFD8DC',
   },
   mainTitle: {
-    fontSize: scale(24),
+    fontSize: scale(18),
     fontWeight: 'bold',
     color: '#263238',
   },
