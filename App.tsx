@@ -8,6 +8,7 @@ import ExamApp from './app/ExamApp';
 import { RootStackParamList } from './types';
 import MatchTheFollowing from './app/MatchTheFollowing';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import Assessment from './app/Assessment';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -16,7 +17,10 @@ export default function App() {
         <SafeAreaProvider style={{ flex: 1 }}>
             <NavigationContainer>
                 <Stack.Navigator initialRouteName="TeacherApp" screenOptions={{ headerShown: false }}>
+
                     <Stack.Screen name="TeacherApp" component={TeacherApp} />
+                    <Stack.Screen name="Assessment" component={Assessment} />
+                    
                     <Stack.Screen name="TestCustomizer" component={TestCustomizer} />
                     <Stack.Screen name="ExamApp" component={ExamApp} />
                     <Stack.Screen name="MatchTheFollowing" component={MatchTheFollowing} />
