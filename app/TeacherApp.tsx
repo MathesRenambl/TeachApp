@@ -1,17 +1,5 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
-import {
-    View,
-    Text,
-    ScrollView,
-    TouchableOpacity,
-    StyleSheet,
-    SafeAreaView,
-    StatusBar,
-    Dimensions,
-    Alert,
-    ActivityIndicator,
-    Modal,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView,StatusBar, Dimensions, Alert, ActivityIndicator } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -28,7 +16,7 @@ interface UploadedFile {
     type: 'pdf' | 'image';
     size: string;
     uploadDate: string;
-    status: 'processing' | 'completed' | 'failed';
+    status: 'processing' | 'completed' |    'failed';
     tags: {
         standard: string;
         subject: string;
