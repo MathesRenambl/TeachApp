@@ -77,25 +77,25 @@ const examData: ExamData = {
                 }
             ]
         },
-        {
-            sectionTitle: "Match the Following",
-            marksPerQuestion: 2,
-            type: "match_the_following",
-            questions: [
-                {
-                    id: 5,
-                    question: "Match the programming languages with their primary uses:",
-                    left: ["Python", "HTML", "CSS", "SQL"],
-                    right: ["Web Styling", "Database Querying", "Web Structure", "General Programming"],
-                    answer: {
-                        "Python": "General Programming",
-                        "HTML": "Web Structure",
-                        "CSS": "Web Styling",
-                        "SQL": "Database Querying"
-                    }
-                }
-            ]
-        },
+        // {
+        //     sectionTitle: "Match the Following",
+        //     marksPerQuestion: 2,
+        //     type: "match_the_following",
+        //     questions: [
+        //         {
+        //             id: 5,
+        //             question: "Match the programming languages with their primary uses:",
+        //             left: ["Python", "HTML", "CSS", "SQL"],
+        //             right: ["Web Styling", "Database Querying", "Web Structure", "General Programming"],
+        //             answer: {
+        //                 "Python": "General Programming",
+        //                 "HTML": "Web Structure",
+        //                 "CSS": "Web Styling",
+        //                 "SQL": "Database Querying"
+        //             }
+        //         }
+        //     ]
+        // },
         {
             sectionTitle: "Short Answer Questions",
             marksPerQuestion: 2,
@@ -679,14 +679,15 @@ const ExamApp: React.FC = () => {
                             setCurrentSection(currentSection + 1);
                             setCurrentQuestion(0);
                         } else {
-                            Alert.alert(
-                                'Submit Exam', 
-                                'Are you sure you want to submit your exam? You cannot make changes after submission.',
-                                [
-                                    { text: 'Cancel', style: 'cancel' },
-                                    { text: 'Submit', onPress: () => console.log('Exam submitted') }
-                                ]
-                            );
+                            // Alert.alert(
+                            //     'Submit Exam', 
+                            //     'Are you sure you want to submit your exam? You cannot make changes after submission.',
+                            //     [
+                            //         { text: 'Cancel', style: 'cancel' },
+                            //         { text: 'Submit', onPress: () => console.log('Exam submitted') }
+                            //     ]
+                            // );
+                            navigation.navigate("MatchTheFollowing")
                         }
                     }}
                 >

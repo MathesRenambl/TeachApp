@@ -3,4 +3,5 @@ export type RootStackParamList = {
   MatchTheFollowing : undefined;
   TestCustomizer: undefined;
   ExamApp: undefined;
+  Assessment: undefined;
 };
