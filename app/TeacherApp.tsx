@@ -287,7 +287,7 @@ const TeacherApp: React.FC = () => {
                         setSelectedFiles([]);
                         resetOptions();
                         Alert.alert('Success', 'Content has been processed and moved to the Library.');
-                        navigation.navigate('TestCustomizer');
+                        // navigation.navigate('TestCustomizer');
                     },
                 },
             ]
