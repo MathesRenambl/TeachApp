@@ -56,11 +56,23 @@ interface ExamConfig {
     'multiple-choice': QuestionType;
     'short-answer': QuestionType;
     'true-false': QuestionType;
+    'match-the-following': QuestionType; // New question type
   };
   difficulty: string;
 }
 
-interface Question {
+interface MatchQuestion {
+  id: string;
+  type: 'match-the-following';
+  question: string;
+  leftColumn: string[];
+  rightColumn: string[];
+  correctAnswer: { [key: number]: number };
+  marks: number;
+  difficulty: string;
+}
+
+interface OtherQuestion {
   id: string;
   type: string;
   question: string;
@@ -70,6 +82,8 @@ interface Question {
   difficulty: string;
 }
 
+type Question = MatchQuestion | OtherQuestion;
+
 type CurrentStep = 'selection' | 'configure' | 'generate' | 'preview';
 
 // Mock data
@@ -77,22 +91,36 @@ const mockUploadedContent: UploadedContent[] = [
   {
     id: '1',
     fileName: 'Mathematics_Chapter1.pdf',
-    tags: { standard: 'Class 10', subject: 'Mathematics', chapter: 'Algebra', language: 'English' },
+    tags: { standard: 'Class 10', subject: 'Mathematics', chapter: 'Chapter 1', language: 'English' },
     uploadDate: '2024-01-15',
     contentType: 'pdf'
   },
   {
     id: '2',
     fileName: 'Science_Diagram.jpg',
-    tags: { standard: 'Class 9', subject: 'Science', chapter: 'Cell Biology', language: 'English' },
+    tags: { standard: 'Class 9', subject: 'Science', chapter: 'Chapter 1', language: 'English' },
     uploadDate: '2024-01-16',
     contentType: 'image'
   },
   {
     id: '3',
     fileName: 'History_Notes.pdf',
-    tags: { standard: 'Class 8', subject: 'Social Studies', chapter: 'World Wars', language: 'Tamil' },
+    tags: { standard: 'Class 8', subject: 'Social Studies', chapter: 'Chapter 1', language: 'Tamil' },
     uploadDate: '2024-01-17',
+    contentType: 'pdf'
+  },
+  {
+    id: '4',
+    fileName: 'Mathematics_Chapter2.pdf',
+    tags: { standard: 'Class 10', subject: 'Mathematics', chapter: 'Chapter 2', language: 'English' },
+    uploadDate: '2024-01-18',
+    contentType: 'pdf'
+  },
+  {
+    id: '5',
+    fileName: 'Science_Notes_Ch2.pdf',
+    tags: { standard: 'Class 9', subject: 'Science', chapter: 'Chapter 2', language: 'English' },
+    uploadDate: '2024-01-19',
     contentType: 'pdf'
   }
 ];
@@ -121,13 +149,39 @@ const mockQuestions: Question[] = [
     correctAnswer: false,
     marks: 1,
     difficulty: 'easy'
+  },
+  {
+    id: 'q4',
+    type: 'multiple-choice',
+    question: 'What is the capital of France?',
+    options: ['London', 'Paris', 'Berlin', 'Madrid'],
+    correctAnswer: 1,
+    marks: 2,
+    difficulty: 'easy'
+  },
+  {
+    id: 'q5',
+    type: 'short-answer',
+    question: 'Describe the process of photosynthesis.',
+    marks: 5,
+    difficulty: 'medium'
+  },
+  { // New Match the Following Question
+    id: 'q6',
+    type: 'match-the-following',
+    question: 'Match the following inventors with their inventions.',
+    leftColumn: ['Alexander Graham Bell', 'Thomas Edison', 'Guglielmo Marconi', 'Karl Benz'],
+    rightColumn: ['Light Bulb', 'Telephone', 'Radio', 'Automobile'],
+    correctAnswer: { 0: 1, 1: 0, 2: 2, 3: 3 }, // Maps index of left column to index of right column
+    marks: 4,
+    difficulty: 'easy',
   }
 ];
 
 const Assessment: React.FC = () => {
   const [selectedStandard, setSelectedStandard] = useState<string>('');
   const [selectedSubject, setSelectedSubject] = useState<string>('');
-  const [selectedChapter, setSelectedChapter] = useState<string>('');
+  const [selectedChapters, setSelectedChapters] = useState<string[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [currentStep, setCurrentStep] = useState<CurrentStep>('selection');
   const [examConfig, setExamConfig] = useState<ExamConfig>({
@@ -136,7 +190,8 @@ const Assessment: React.FC = () => {
     questionTypes: {
       'multiple-choice': { count: 5, marks: 2 },
       'short-answer': { count: 3, marks: 5 },
-      'true-false': { count: 5, marks: 1 }
+      'true-false': { count: 5, marks: 1 },
+      'match-the-following': { count: 1, marks: 4 },
     },
     difficulty: 'mixed'
   });
@@ -156,13 +211,24 @@ const Assessment: React.FC = () => {
         .filter(item => item.tags.standard === selectedStandard && item.tags.subject === selectedSubject)
         .map(item => item.tags.chapter))]
     : [];
-  const availableLanguages = selectedChapter
+  const availableLanguages = selectedChapters.length > 0
     ? [...new Set(mockUploadedContent
         .filter(item => item.tags.standard === selectedStandard && 
                        item.tags.subject === selectedSubject && 
-                       item.tags.chapter === selectedChapter)
+                       selectedChapters.includes(item.tags.chapter))
         .map(item => item.tags.language))]
     : [];
+    
+    // Toggles a chapter's selection
+  const toggleChapterSelection = (chapter: string) => {
+    setSelectedChapters(prev => {
+      if (prev.includes(chapter)) {
+        return prev.filter(c => c !== chapter);
+      } else {
+        return [...prev, chapter];
+      }
+    });
+  };
 
   const generateQuestions = async (): Promise<void> => {
     setIsGenerating(true);
@@ -204,7 +270,7 @@ const Assessment: React.FC = () => {
               <Text style={styles.breadcrumbText}>Chapter</Text>
             </>
           )}
-          {selectedChapter && (
+          {selectedChapters.length > 0 && (
             <>
               <ChevronRight size={scale(16)} color="#9CA3AF" />
               <Text style={styles.breadcrumbText}>Language</Text>
@@ -226,7 +292,7 @@ const Assessment: React.FC = () => {
                 onPress={() => {
                   setSelectedStandard(standard);
                   setSelectedSubject('');
-                  setSelectedChapter('');
+                  setSelectedChapters([]);
                   setSelectedLanguage('');
                 }}
               >
@@ -255,7 +321,7 @@ const Assessment: React.FC = () => {
                   ]}
                   onPress={() => {
                     setSelectedSubject(subject);
-                    setSelectedChapter('');
+                    setSelectedChapters([]);
                     setSelectedLanguage('');
                   }}
                 >
@@ -271,26 +337,23 @@ const Assessment: React.FC = () => {
           </View>
         )}
 
-        {/* Chapter Selection */}
+        {/* Chapter Selection (Multi-select) */}
         {selectedSubject && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Select Chapter</Text>
+            <Text style={styles.sectionTitle}>Select Chapter(s)</Text>
             <View style={styles.grid}>
               {availableChapters.map((chapter) => (
                 <TouchableOpacity
                   key={chapter}
                   style={[
                     styles.selectionButton,
-                    selectedChapter === chapter && styles.selectedButton
+                    selectedChapters.includes(chapter) && styles.selectedButton
                   ]}
-                  onPress={() => {
-                    setSelectedChapter(chapter);
-                    setSelectedLanguage('');
-                  }}
+                  onPress={() => toggleChapterSelection(chapter)}
                 >
                   <Text style={[
                     styles.buttonText,
-                    selectedChapter === chapter && styles.selectedButtonText
+                    selectedChapters.includes(chapter) && styles.selectedButtonText
                   ]}>
                     {chapter}
                   </Text>
@@ -301,7 +364,7 @@ const Assessment: React.FC = () => {
         )}
 
         {/* Language Selection */}
-        {selectedChapter && (
+        {selectedChapters.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Select Language</Text>
             <View style={styles.grid}>
@@ -361,8 +424,8 @@ const Assessment: React.FC = () => {
               <Text style={styles.summaryValue}>{selectedSubject}</Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Chapter:</Text>
-              <Text style={styles.summaryValue}>{selectedChapter}</Text>
+              <Text style={styles.summaryLabel}>Chapters:</Text>
+              <Text style={styles.summaryValue}>{selectedChapters.join(', ')}</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Language:</Text>
@@ -526,8 +589,8 @@ const Assessment: React.FC = () => {
             <Text style={styles.infoValue}>{selectedSubject}</Text>
           </View>
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Chapter</Text>
-            <Text style={styles.infoValue}>{selectedChapter}</Text>
+            <Text style={styles.infoLabel}>Chapters</Text>
+            <Text style={styles.infoValue}>{selectedChapters.join(', ')}</Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>Total Marks</Text>
@@ -616,6 +679,29 @@ const Assessment: React.FC = () => {
                     ]}>
                       False
                     </Text>
+                  </View>
+                </View>
+              )}
+
+              {question.type === 'match-the-following' && (
+                <View style={styles.matchContainer}>
+                  <View style={styles.matchColumn}>
+                    <Text style={styles.matchColumnTitle}>Column A</Text>
+                    {(question as MatchQuestion).leftColumn.map((item, i) => (
+                      <View key={i} style={styles.matchItem}>
+                        <Text style={styles.matchItemNumber}>{i + 1}.</Text>
+                        <Text style={styles.matchItemText}>{item}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <View style={styles.matchColumn}>
+                    <Text style={styles.matchColumnTitle}>Column B</Text>
+                    {(question as MatchQuestion).rightColumn.map((item, i) => (
+                      <View key={i} style={styles.matchItem}>
+                        <Text style={styles.matchItemLetter}>{String.fromCharCode(65 + i)}.</Text>
+                        <Text style={styles.matchItemText}>{item}</Text>
+                      </View>
+                    ))}
                   </View>
                 </View>
               )}
@@ -728,7 +814,7 @@ const Assessment: React.FC = () => {
                   <Text style={styles.pdfTitle}>{selectedSubject} Assessment</Text>
                   <View style={styles.pdfInfo}>
                     <Text style={styles.pdfInfoText}>Class: {selectedStandard}</Text>
-                    <Text style={styles.pdfInfoText}>Chapter: {selectedChapter}</Text>
+                    <Text style={styles.pdfInfoText}>Chapters: {selectedChapters.join(', ')}</Text>
                     <Text style={styles.pdfInfoText}>Total Marks: {calculateTotalMarks()}</Text>
                     <Text style={styles.pdfInfoText}>Time: {examConfig.duration} minutes</Text>
                   </View>
@@ -743,7 +829,7 @@ const Assessment: React.FC = () => {
                         <Text style={styles.pdfQuestionMarks}>({question.marks} marks)</Text>
                       </View>
                       
-                      {question.type === 'multiple-choice' && question.options && (
+                      {question.type === 'multiple-choice' && 'options' in question && (
                         <View style={styles.pdfOptions}>
                           {question.options.map((option, optionIndex) => (
                             <Text key={optionIndex} style={styles.pdfOption}>
@@ -759,17 +845,47 @@ const Assessment: React.FC = () => {
                           <Text style={styles.pdfTrueFalseOption}>( ) False</Text>
                         </View>
                       )}
+                      {question.type === 'match-the-following' && 'leftColumn' in question && (
+                        <View style={styles.pdfMatch}>
+                          <View style={styles.pdfMatchColumn}>
+                            {question.leftColumn.map((item, i) => (
+                              <Text key={i} style={styles.pdfMatchItem}>
+                                {i + 1}. {item}
+                              </Text>
+                            ))}
+                          </View>
+                          <View style={styles.pdfMatchColumn}>
+                            {question.rightColumn.map((item, i) => (
+                              <Text key={i} style={styles.pdfMatchItem}>
+                                {String.fromCharCode(65 + i)}. {item}
+                              </Text>
+                            ))}
+                          </View>
+                        </View>
+                      )}
                     </View>
                   ))}
                 </View>
                 
                 <View style={styles.pdfAnswerKey}>
                   <Text style={styles.pdfAnswerKeyTitle}>--- Answer Key ---</Text>
-                  {generatedQuestions.map((q, i) => (
-                    <Text key={q.id} style={styles.pdfAnswerKeyText}>
-                      {i + 1}: {q.type === 'multiple-choice' ? String.fromCharCode(97 + (q.correctAnswer as number)) : String(q.correctAnswer)}
-                    </Text>
-                  ))}
+                  {generatedQuestions.map((q, i) => {
+                    let answer = '';
+                    if (q.type === 'multiple-choice' && 'correctAnswer' in q) {
+                      answer = String.fromCharCode(97 + (q.correctAnswer as number));
+                    } else if (q.type === 'true-false' && 'correctAnswer' in q) {
+                      answer = String(q.correctAnswer);
+                    } else if (q.type === 'match-the-following' && 'correctAnswer' in q) {
+                      answer = Object.entries(q.correctAnswer)
+                                  .map(([left, right]) => `${parseInt(left) + 1}-${String.fromCharCode(65 + right)}`)
+                                  .join(', ');
+                    }
+                    return (
+                      <Text key={q.id} style={styles.pdfAnswerKeyText}>
+                        {i + 1}: {answer}
+                      </Text>
+                    );
+                  })}
                 </View>
               </View>
             </ScrollView>
@@ -1292,6 +1408,42 @@ const styles = StyleSheet.create({
     color: '#059669',
     fontWeight: '600',
   },
+  matchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: scale(8),
+  },
+  matchColumn: {
+    flex: 1,
+  },
+  matchColumnTitle: {
+    fontSize: scale(14),
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: scale(8),
+  },
+  matchItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: scale(8),
+  },
+  matchItemNumber: {
+    fontSize: scale(14),
+    fontWeight: 'bold',
+    color: '#374151',
+    width: scale(20),
+  },
+  matchItemLetter: {
+    fontSize: scale(14),
+    fontWeight: 'bold',
+    color: '#374151',
+    width: scale(20),
+  },
+  matchItemText: {
+    flex: 1,
+    fontSize: scale(14),
+    color: '#374151',
+  },
   previewActionsBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1401,6 +1553,19 @@ const styles = StyleSheet.create({
   pdfTrueFalseOption: {
     fontSize: scale(14),
     color: '#374151',
+  },
+  pdfMatch: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginLeft: scale(20),
+  },
+  pdfMatchColumn: {
+    flex: 1,
+  },
+  pdfMatchItem: {
+    fontSize: scale(14),
+    color: '#111827',
+    marginBottom: scale(4),
   },
   pdfAnswerKey: {
     borderTopWidth: 1,
