@@ -1,27 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  ActivityIndicator,
-  SafeAreaView,
-  Dimensions,
-} from 'react-native';
-import {
-  ChevronRight,
-  Plus,
-  Edit3,
-  Trash2,
-  Download,
-  Eye,
-  FileText,
-  Settings,
-  Save,
-} from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, SafeAreaView, Dimensions, } from 'react-native';
+import { ChevronRight, Plus, Edit3, Trash2, Download, Eye, FileText, Settings, Save, } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -198,7 +178,7 @@ const Assessment: React.FC = () => {
   const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [showPdfPreview, setShowPdfPreview] = useState<boolean>(false);
-
+  const navigate = useNavigation();
   // Extract unique values from uploaded content
   const availableStandards = [...new Set(mockUploadedContent.map(item => item.tags.standard))];
   const availableSubjects = selectedStandard 
@@ -717,7 +697,7 @@ const Assessment: React.FC = () => {
           >
             <Text style={styles.secondaryButtonText}>Re-configure</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.greenButton}>
+          <TouchableOpacity style={styles.greenButton} onPress={() => navigate.navigate("ExamApp")}>
             <Text style={styles.greenButtonText}>Publish</Text>
           </TouchableOpacity>
         </View>
@@ -751,7 +731,7 @@ const Assessment: React.FC = () => {
       <View style={styles.mainContainer}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.mainTitle}>Assessment Dashboard</Text>
+          <Text style={styles.mainTitle}>Create Assessment</Text>
         </View>
 
         {/* Progress Steps */}
@@ -964,15 +944,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: scale(12),
-    padding: width * 0.05, // Responsive padding
+    // backgroundColor: '#FFFFFF',
+   
+    // padding: width * 0.05, // Responsive padding
     marginBottom: scale(16),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
   },
   title: {
     fontSize: scale(20),
@@ -1231,7 +1206,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: scale(16),
+    marginBottom: scale(0),
   },
   previewHeaderInfo: {
     flex: 1,
@@ -1259,7 +1234,7 @@ const styles = StyleSheet.create({
   assessmentInfo: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#fff',
     padding: scale(12),
     borderRadius: scale(8),
     marginBottom: scale(20),

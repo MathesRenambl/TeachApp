@@ -1,67 +1,19 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Dimensions, Alert, ActivityIndicator } from 'react-native';
-import { MaterialIcons as Icon } from '@expo/vector-icons';
-import * as DocumentPicker from 'expo-document-picker';
-import * as ImagePicker from 'expo-image-picker';
-import { useNavigation } from '@react-navigation/native';
+import { useState } from "react";
+import { useNavigation } from "expo-router";
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types';
-
-// Import Library component (you'll need to adjust the import path)
-import Library from './Library'; // Adjust this import path as needed
-
+import { RootStackParamList } from '../../../../types';
 const { width, height } = Dimensions.get('window');
-type Navigation = NativeStackNavigationProp<RootStackParamList, 'TeacherApp'>;
 
-interface UploadedFile {
-    id: string;
-    name: string;
-    type: 'pdf' | 'image';
-    size: string;
-    uploadDate: string;
-    status: 'processing' | 'completed' | 'failed';
-    tags: {
-        standard: string;
-        subject: string;
-        chapter: string;
-        language: string;
-    };
-}
+type Navigation = NativeStackNavigationProp<RootStackParamList, 'TeacherApp'>;
 
 interface TagModalState {
     visible: boolean;
     uploadType: 'pdf' | 'image' | null;
 }
 
-interface AssessmentCreationState {
-    showSlider: boolean;
-    selectedStandard: string;
-    selectedSubject: string;
-    selectedChapter: string;
-    showAssessmentOptions: boolean;
-}
+const UploadTab = () => {
 
-const TeacherApp: React.FC = () => {
-
-    const [selectedFiles, setSelectedFiles] = useState<UploadedFile[]>([]);
-    const [libraryFiles, setLibraryFiles] = useState<UploadedFile[]>([]);
-    const [teachFromContent, setTeachFromContent] = useState(false);
-    const [createExam, setCreateExam] = useState(false);
-    const [generateQuiz, setGenerateQuiz] = useState(false);
-    const [createAssignment, setCreateAssignment] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-    const [activeTab, setActiveTab] = useState<'upload' | 'library' | 'assessment'>('upload');
-
-    // Assessment creation states
-    const [assessmentCreation, setAssessmentCreation] = useState<AssessmentCreationState>({
-        showSlider: false,
-        selectedStandard: '',
-        selectedSubject: '',
-        selectedChapter: '',
-        showAssessmentOptions: false,
-    });
-
-    // Tag selection states
     const [tagModal, setTagModal] = useState<TagModalState>({ visible: false, uploadType: null });
     const [selectedTags, setSelectedTags] = useState({
         standard: '',
@@ -148,11 +100,10 @@ const TeacherApp: React.FC = () => {
     };
 
     const handleCreateAssessmentClick = () => {
-        // setAssessmentCreation(prev => ({
-        //     ...prev,
-        //     showSlider: true,
-        // }));
-        navigation.navigate("Assessment")
+        setAssessmentCreation(prev => ({
+            ...prev,
+            showSlider: true,
+        }));
     };
 
     const handleAssessmentGeneration = () => {
@@ -428,14 +379,12 @@ const TeacherApp: React.FC = () => {
         </View>
     );
 
-    const UploadTab = () => (
+    return (
         <View style={styles.tabContent}>
             <View style={styles.uploadSection}>
                 <Text style={styles.sectionTitle}>Interactive Learning Made Easy</Text>
-                <Text style={styles.sectionSubtitle}>
-                    Upload PDF documents or images to turn your resources into impactful learning environments
-                </Text>
-
+                <Text style={styles.sectionSubtitle}>Upload PDF documents or images to turn your resources into impactful learning environments</Text>
+                
                 <View style={styles.uploadButtons}>
                     <TouchableOpacity
                         style={styles.uploadButton}
@@ -554,365 +503,10 @@ const TeacherApp: React.FC = () => {
                 </View>
             )}
         </View>
-    );
-
-    const LibraryTab = () => (
-        <View style={styles.tabContent}>
-            <Library />
-        </View>
-    );
-
-    const AssessmentTab = () => (
-        <View style={styles.tabContent}>
-            {!assessmentCreation.showSlider ? (
-                <View style={styles.assessmentInitialView}>
-                    <View style={styles.emptyState}>
-                        <Icon name="assessment" size={width * 0.16} color="#4A90E2" />
-                        <Text style={styles.emptyStateTitle}>Assessment Dashboard</Text>
-                        <Text style={styles.emptyStateDescription}>
-                            Create custom assessments and track student performance
-                        </Text>
-                    </View>
-
-                    <TouchableOpacity
-                        style={styles.createAssessmentButton}
-                        onPress={handleCreateAssessmentClick}
-                        activeOpacity={0.8}
-                    >
-                        <View style={styles.createAssessmentContent}>
-                            <Icon name="add-circle" size={24} color="#FFFFFF" />
-                            <Text style={styles.createAssessmentText}>Create Assessment</Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.viewAssessmentButton}
-                        onPress={() => navigation.navigate("Assessment")}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.viewAssessmentContent}>
-                            <Icon name="visibility" size={20} color="#4A90E2" />
-                            <Text style={styles.viewAssessmentText}>View Assessments</Text>
-                        </View>
-                    </TouchableOpacity>
-                </View>
-            ) : (
-                <View style={styles.assessmentCreationView}>
-                    <View style={styles.assessmentHeader}>
-                        <TouchableOpacity
-                            style={styles.backButton}
-                            onPress={resetAssessmentCreation}
-                            activeOpacity={0.7}
-                        >
-                            <Icon name="arrow-back" size={24} color="#4A90E2" />
-                        </TouchableOpacity>
-                        <Text style={styles.assessmentHeaderTitle}>Create New Assessment</Text>
-                    </View>
-
-                    {/* Class Selection */}
-                    <View style={styles.assessmentTagSection}>
-                        <Text style={styles.assessmentTagTitle}>Select Class/Standard *</Text>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            style={styles.horizontalScrollView}
-                            contentContainerStyle={styles.horizontalScrollContent}
-                        >
-                            {tagOptions.standards.map((standard) => (
-                                <TouchableOpacity
-                                    key={standard}
-                                    style={[
-                                        styles.assessmentTagOption,
-                                        assessmentCreation.selectedStandard === standard && styles.assessmentTagOptionSelected,
-                                    ]}
-                                    onPress={() => handleAssessmentTagSelection('selectedStandard', standard)}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.assessmentTagOptionText,
-                                            assessmentCreation.selectedStandard === standard && styles.assessmentTagOptionTextSelected,
-                                        ]}
-                                    >
-                                        {standard}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </View>
-
-                    {/* Subject Selection */}
-                    <View style={styles.assessmentTagSection}>
-                        <Text style={styles.assessmentTagTitle}>Select Subject *</Text>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            style={styles.horizontalScrollView}
-                            contentContainerStyle={styles.horizontalScrollContent}
-                        >
-                            {tagOptions.subjects.map((subject) => (
-                                <TouchableOpacity
-                                    key={subject}
-                                    style={[
-                                        styles.assessmentTagOption,
-                                        assessmentCreation.selectedSubject === subject && styles.assessmentTagOptionSelected,
-                                    ]}
-                                    onPress={() => handleAssessmentTagSelection('selectedSubject', subject)}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.assessmentTagOptionText,
-                                            assessmentCreation.selectedSubject === subject && styles.assessmentTagOptionTextSelected,
-                                        ]}
-                                    >
-                                        {subject}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </View>
-
-                    {/* Chapter Selection */}
-                    <View style={styles.assessmentTagSection}>
-                        <Text style={styles.assessmentTagTitle}>Select Chapter *</Text>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            style={styles.horizontalScrollView}
-                            contentContainerStyle={styles.horizontalScrollContent}
-                        >
-                            {tagOptions.chapters.map((chapter) => (
-                                <TouchableOpacity
-                                    key={chapter}
-                                    style={[
-                                        styles.assessmentTagOption,
-                                        assessmentCreation.selectedChapter === chapter && styles.assessmentTagOptionSelected,
-                                    ]}
-                                    onPress={() => handleAssessmentTagSelection('selectedChapter', chapter)}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.assessmentTagOptionText,
-                                            assessmentCreation.selectedChapter === chapter && styles.assessmentTagOptionTextSelected,
-                                        ]}
-                                    >
-                                        {chapter}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </View>
-
-                    {/* Assessment Type Selection */}
-                    {assessmentCreation.showAssessmentOptions && (
-                        <View style={styles.actionsSection}>
-                            <View style={styles.sectionHeaderMain}>
-                                <Text style={styles.sectionTitle}>What would you like to create?</Text>
-                                <Text style={styles.sectionSubtitle}>
-                                    Select one or more assessment types to generate
-                                </Text>
-                            </View>
-
-                            <View style={styles.checkboxContainer}>
-                                <TouchableOpacity
-                                    style={styles.checkboxItem}
-                                    onPress={() => handleCheckboxPress(setTeachFromContent)}
-                                    activeOpacity={0.8}
-                                >
-                                    <View style={[styles.checkbox, teachFromContent && styles.checkboxSelected]}>
-                                        {teachFromContent && <Icon name="check" size={16} color="#FFFFFF" />}
-                                    </View>
-                                    <View style={styles.checkboxContent}>
-                                        <Text style={styles.checkboxTitle}>Interactive Teaching Content</Text>
-                                        <Text style={styles.checkboxDescription}>
-                                            Create slide presentations, interactive lessons, and teaching materials
-                                        </Text>
-                                    </View>
-                                    <Icon name="school" size={24} color="#9B59B6" />
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.checkboxItem}
-                                    onPress={() => handleCheckboxPress(setCreateExam)}
-                                    activeOpacity={0.8}
-                                >
-                                    <View style={[styles.checkbox, createExam && styles.checkboxSelected]}>
-                                        {createExam && <Icon name="check" size={16} color="#FFFFFF" />}
-                                    </View>
-                                    <View style={styles.checkboxContent}>
-                                        <Text style={styles.checkboxTitle}>Comprehensive Exam</Text>
-                                        <Text style={styles.checkboxDescription}>
-                                            Generate detailed exams with multiple question types and answer keys
-                                        </Text>
-                                    </View>
-                                    <Icon name="assignment" size={24} color="#E67E22" />
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.checkboxItem}
-                                    onPress={() => handleCheckboxPress(setGenerateQuiz)}
-                                    activeOpacity={0.8}
-                                >
-                                    <View style={[styles.checkbox, generateQuiz && styles.checkboxSelected]}>
-                                        {generateQuiz && <Icon name="check" size={16} color="#FFFFFF" />}
-                                    </View>
-                                    <View style={styles.checkboxContent}>
-                                        <Text style={styles.checkboxTitle}>Quick Quiz</Text>
-                                        <Text style={styles.checkboxDescription}>
-                                            Generate short quizzes for quick knowledge assessment
-                                        </Text>
-                                    </View>
-                                    <Icon name="quiz" size={24} color="#3498DB" />
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.checkboxItem}
-                                    onPress={() => handleCheckboxPress(setCreateAssignment)}
-                                    activeOpacity={0.8}
-                                >
-                                    <View style={[styles.checkbox, createAssignment && styles.checkboxSelected]}>
-                                        {createAssignment && <Icon name="check" size={16} color="#FFFFFF" />}
-                                    </View>
-                                    <View style={styles.checkboxContent}>
-                                        <Text style={styles.checkboxTitle}>Assignment Tasks</Text>
-                                        <Text style={styles.checkboxDescription}>
-                                            Create homework assignments and practice exercises
-                                        </Text>
-                                    </View>
-                                    <Icon name="task" size={24} color="#27AE60" />
-                                </TouchableOpacity>
-                            </View>
-
-                            <TouchableOpacity
-                                style={styles.processButton}
-                                onPress={handleAssessmentGeneration}
-                                activeOpacity={0.8}
-                            >
-                                <View style={styles.processButtonContent}>
-                                    <Icon name="auto-awesome" size={20} color="#FFFFFF" />
-                                    <Text style={styles.processButtonText}>Create Assessment</Text>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-
-                    {/* Selected Tags Summary */}
-                    {(assessmentCreation.selectedStandard || assessmentCreation.selectedSubject || assessmentCreation.selectedChapter) && (
-                        <View style={styles.selectedTagsSummary}>
-                            <Text style={styles.selectedTagsTitle}>Selected Parameters:</Text>
-                            <View style={styles.selectedTagsContainer}>
-                                {assessmentCreation.selectedStandard && (
-                                    <View style={styles.selectedTag}>
-                                        <Text style={styles.selectedTagText}>Class: {assessmentCreation.selectedStandard}</Text>
-                                    </View>
-                                )}
-                                {assessmentCreation.selectedSubject && (
-                                    <View style={styles.selectedTag}>
-                                        <Text style={styles.selectedTagText}>Subject: {assessmentCreation.selectedSubject}</Text>
-                                    </View>
-                                )}
-                                {assessmentCreation.selectedChapter && (
-                                    <View style={styles.selectedTag}>
-                                        <Text style={styles.selectedTagText}>Chapter: {assessmentCreation.selectedChapter}</Text>
-                                    </View>
-                                )}
-                            </View>
-                        </View>
-                    )}
-                </View>
-            )}
-        </View>
-    );
-
-    return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-            
-            {/* Header */}
-            <View style={styles.header}>
-                <View style={styles.headerContent}>
-                    <View style={styles.headerLeft}>
-                        <View style={styles.profileIcon}>
-                            <Icon name="person" size={24} color="#4A90E2" />
-                        </View>
-                        <View>
-                            <Text style={styles.welcomeText}>Welcome back,</Text>
-                            <Text style={styles.teacherName}>Gokul Thirumal</Text>
-                        </View>
-                    </View>
-                </View>
-            </View>
-
-            {/* Tab Navigation */}
-            <View style={styles.tabNavigation}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'upload' && styles.activeTab]}
-                    onPress={() => setActiveTab('upload')}
-                >
-                    <Icon
-                        name="cloud-upload"
-                        size={20}
-                        color={activeTab === 'upload' ? '#4A90E2' : '#95A5A6'}
-                    />
-                    <Text
-                        style={[styles.tabText, activeTab === 'upload' && styles.activeTabText]}
-                    >
-                        Upload
-                    </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'library' && styles.activeTab]}
-                    onPress={() => setActiveTab('library')}
-                >
-                    <Icon
-                        name="library-books"
-                        size={20}
-                        color={activeTab === 'library' ? '#4A90E2' : '#95A5A6'}
-                    />
-                    <Text
-                        style={[styles.tabText, activeTab === 'library' && styles.activeTabText]}
-                    >
-                        Library
-                    </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'assessment' && styles.activeTab]}
-                    onPress={() => setActiveTab('assessment')}
-                >
-                    <Icon
-                        name="assessment"
-                        size={20}
-                        color={activeTab === 'assessment' ? '#4A90E2' : '#95A5A6'}
-                    />
-                    <Text
-                        style={[styles.tabText, activeTab === 'assessment' && styles.activeTabText]}
-                    >
-                        Assessment
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Main Content with Global ScrollView */}
-            <ScrollView 
-                style={styles.contentContainer}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-            >
-                {activeTab === 'upload' && <UploadTab />}
-                {activeTab === 'library' && <LibraryTab />}
-                {activeTab === 'assessment' && <AssessmentTab />}
-            </ScrollView>
-
-            {/* Tag Selection Modal */}
-            {TagSelectionModal()}
-        </SafeAreaView>
-    );
+    )
 };
+
+export default UploadTab;
 
 const styles = StyleSheet.create({
     container: {
@@ -1549,5 +1143,3 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 });
-
-export default TeacherApp;
