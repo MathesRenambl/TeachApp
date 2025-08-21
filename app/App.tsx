@@ -1,12 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
-import TeacherApp from './TeacherApp';
+import TeacherApp from '../scripts/TeacherApp';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import TestCustomizer from './TestCustomizer';
-import ExamApp from './ExamApp';
+import TestCustomizer from '../scripts/TestCustomizer';
+import ExamApp from '../scripts/ExamApp';
 import { RootStackParamList } from '../types';
-import MatchTheFollowing from './MatchTheFollowing';
+import MatchTheFollowing from '../scripts/MatchTheFollowing';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import CustomizerAssessment from './features/customizerAssessment';
 import Home from './features/home';
