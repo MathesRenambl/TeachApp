@@ -4,6 +4,9 @@ export type RootStackParamList = {
   TestCustomizer: undefined;
   ExamApp: undefined;
   Assessment: undefined;
+  Library:undefined;
+  CustomizerAssessment : undefined;
+  Home : undefined;
 };
 
 // File types

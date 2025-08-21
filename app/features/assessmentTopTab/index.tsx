@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Alert, ScrollView } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../../types';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
+
+type Navigation = NativeStackNavigationProp<RootStackParamList, 'TeacherApp'>;
 
 interface AssessmentCreationState {
     showSlider: boolean;
@@ -21,7 +26,7 @@ const Assessment: React.FC<AssessmentProps> = ({ onNavigateToAssessment }) => {
     const [createExam, setCreateExam] = useState(false);
     const [generateQuiz, setGenerateQuiz] = useState(false);
     const [createAssignment, setCreateAssignment] = useState(false);
-
+    const navigation = useNavigation<Navigation>();
     // Assessment creation states
     const [assessmentCreation, setAssessmentCreation] = useState<AssessmentCreationState>({
         showSlider: false,
@@ -74,10 +79,11 @@ const Assessment: React.FC<AssessmentProps> = ({ onNavigateToAssessment }) => {
     };
 
     const handleCreateAssessmentClick = () => {
-        setAssessmentCreation(prev => ({
-            ...prev,
-            showSlider: true,
-        }));
+        // setAssessmentCreation(prev => ({
+        //     ...prev,
+        //     showSlider: true,
+        // }));
+        navigation.navigate("CustomizerAssessment")
     };
 
     const handleAssessmentGeneration = () => {

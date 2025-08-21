@@ -8,7 +8,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 
 // Import Library component (you'll need to adjust the import path)
-import Library from './Library'; // Adjust this import path as needed
+import Library from './features/libraryTopTab'; // Adjust this import path as needed
 
 const { width, height } = Dimensions.get('window');
 type Navigation = NativeStackNavigationProp<RootStackParamList, 'TeacherApp'>;

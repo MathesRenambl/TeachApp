@@ -3,11 +3,11 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Sta
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../../types'; // Adjust the import path as needed
+import { RootStackParamList } from '../../../types';
 
 // Import components
 import Upload from '../uploadTopTab/index';
-import Library from '../libraryTopTab/index';
+import Library from '../libraryTopTab';
 import Assessment from '../assessmentTopTab/index';
 
 const { width, height } = Dimensions.get('window');
@@ -53,18 +53,13 @@ const TeacherApp: React.FC = () => {
     const renderTabContent = () => {
         switch (activeTab) {
             case 'upload':
-                return <Upload onFilesProcessed={handleFilesProcessed} />;
+                return <Upload />;
             case 'library':
-                return (
-                    <Library 
-                        libraryFiles={libraryFiles} 
-                        onFileSelect={handleFileSelect} 
-                    />
-                );
+                return <Library />;
             case 'assessment':
-                return <Assessment onNavigateToAssessment={handleNavigateToAssessment} />;
+                return <Assessment />;
             default:
-                return <Upload onFilesProcessed={handleFilesProcessed} />;
+                return <Upload />;
         }
     };
 

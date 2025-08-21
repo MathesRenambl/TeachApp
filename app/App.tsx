@@ -8,9 +8,9 @@ import ExamApp from './ExamApp';
 import { RootStackParamList } from '../types';
 import MatchTheFollowing from './MatchTheFollowing';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import Assessment from './features/assessmentTopTab';
-import home from './features/home/index';
-import Library from './Library';
+import CustomizerAssessment from './features/customizerAssessment';
+import Home from './features/home';
+import Library from './features/libraryTopTab';
 import React from 'react';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -19,10 +19,10 @@ export default function App() {
     return (
         <SafeAreaProvider>
             <NavigationContainer>
-                <Stack.Navigator initialRouteName="home" screenOptions={{ headerShown: false }}>
-                    <Stack.Screen name="home" component={home} />
+                <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="Home" component={Home} />
                     <Stack.Screen name="Library" component={Library} />
-                    <Stack.Screen name="Assessment" component={Assessment} />
+                    <Stack.Screen name="CustomizerAssessment" component={CustomizerAssessment} />
                     <Stack.Screen name="TestCustomizer" component={TestCustomizer} />
                     <Stack.Screen name="ExamApp" component={ExamApp} />
                     <Stack.Screen name="MatchTheFollowing" component={MatchTheFollowing} />
