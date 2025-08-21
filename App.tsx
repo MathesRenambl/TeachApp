@@ -10,6 +10,7 @@ import MatchTheFollowing from './app/MatchTheFollowing';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Assessment from './app/Assessment';
 import Library from './app/Library';
+import React from 'react';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

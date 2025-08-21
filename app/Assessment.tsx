@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, SafeAreaView, Dimensions, } from 'react-native';
 import { ChevronRight, Plus, Edit3, Trash2, Download, Eye, FileText, Settings, Save, } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
-// Helper function for responsive sizing
-const scale = (size: number) => (width / 375) * size; // 375 is a guideline baseline width
+const scale = (size: number) => (width / 375) * size;
 
 // Types
 interface ContentTags {
@@ -36,7 +35,7 @@ interface ExamConfig {
     'multiple-choice': QuestionType;
     'short-answer': QuestionType;
     'true-false': QuestionType;
-    'match-the-following': QuestionType; // New question type
+    'match-the-following': QuestionType;
   };
   difficulty: string;
 }
@@ -158,134 +157,224 @@ const mockQuestions: Question[] = [
   }
 ];
 
-const Assessment: React.FC = () => {
-  const [selectedStandard, setSelectedStandard] = useState<string>('');
-  const [selectedSubject, setSelectedSubject] = useState<string>('');
-  const [selectedChapters, setSelectedChapters] = useState<string[]>([]);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('');
-  const [currentStep, setCurrentStep] = useState<CurrentStep>('selection');
-  const [examConfig, setExamConfig] = useState<ExamConfig>({
-    totalMarks: 50,
-    duration: 60,
-    questionTypes: {
-      'multiple-choice': { count: 5, marks: 2 },
-      'short-answer': { count: 3, marks: 5 },
-      'true-false': { count: 5, marks: 1 },
-      'match-the-following': { count: 1, marks: 4 },
-    },
-    difficulty: 'mixed'
+// Define SelectionStep component outside of Assessment
+interface SelectionStepProps {
+  selectedCurriculum: string;
+  setSelectedCurriculum: React.Dispatch<React.SetStateAction<string>>;
+  selectedStandard: string;
+  setSelectedStandard: React.Dispatch<React.SetStateAction<string>>;
+  selectedSubject: string;
+  setSelectedSubject: React.Dispatch<React.SetStateAction<string>>;
+  selectedChapters: string[];
+  setSelectedChapters: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedLanguage: string;
+  setSelectedLanguage: React.Dispatch<React.SetStateAction<string>>;
+  setCurrentStep: React.Dispatch<React.SetStateAction<CurrentStep>>;
+  availableStandards: string[];
+  availableSubjects: string[];
+  availableChapters: string[];
+  availableLanguagesForStateBoard: string[];
+  availableLanguagesForCBSE: string[];
+  toggleChapterSelection: (chapter: string) => void;
+}
+
+const SelectionStep: React.FC<SelectionStepProps> = ({
+  selectedCurriculum,
+  setSelectedCurriculum,
+  selectedStandard,
+  setSelectedStandard,
+  selectedSubject,
+  setSelectedSubject,
+  selectedChapters,
+  setSelectedChapters,
+  selectedLanguage,
+  setSelectedLanguage,
+  setCurrentStep,
+  availableStandards,
+  availableSubjects,
+  availableChapters,
+  availableLanguagesForStateBoard,
+  availableLanguagesForCBSE,
+  toggleChapterSelection,
+}) => {
+
+  // Memoized component for chapter buttons to prevent unnecessary re-renders
+  const MemoizedChapterButton = React.memo(({ chapter, isSelected, onPress }: { chapter: string; isSelected: boolean; onPress: (chapter: string) => void }) => {
+    return (
+      <TouchableOpacity
+        style={[
+          styles.selectionButton,
+          isSelected && styles.selectedButton
+        ]}
+        onPress={() => onPress(chapter)}
+      >
+        <Text style={[
+          styles.buttonText,
+          isSelected && styles.selectedButtonText
+        ]}>
+          {chapter}
+        </Text>
+      </TouchableOpacity>
+    );
   });
-  const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [showPdfPreview, setShowPdfPreview] = useState<boolean>(false);
-  const navigate = useNavigation();
-  // Extract unique values from uploaded content
-  const availableStandards = [...new Set(mockUploadedContent.map(item => item.tags.standard))];
-  const availableSubjects = selectedStandard 
-    ? [...new Set(mockUploadedContent
-        .filter(item => item.tags.standard === selectedStandard)
-        .map(item => item.tags.subject))]
-    : [];
-  const availableChapters = selectedSubject 
-    ? [...new Set(mockUploadedContent
-        .filter(item => item.tags.standard === selectedStandard && item.tags.subject === selectedSubject)
-        .map(item => item.tags.chapter))]
-    : [];
-  const availableLanguages = selectedChapters.length > 0
-    ? [...new Set(mockUploadedContent
-        .filter(item => item.tags.standard === selectedStandard && 
-                       item.tags.subject === selectedSubject && 
-                       selectedChapters.includes(item.tags.chapter))
-        .map(item => item.tags.language))]
-    : [];
-    
-    // Toggles a chapter's selection
-  const toggleChapterSelection = (chapter: string) => {
-    setSelectedChapters(prev => {
-      if (prev.includes(chapter)) {
-        return prev.filter(c => c !== chapter);
-      } else {
-        return [...prev, chapter];
-      }
-    });
-  };
 
-  const generateQuestions = async (): Promise<void> => {
-    setIsGenerating(true);
-    setCurrentStep('generate');
-    
-    setTimeout(() => {
-      setGeneratedQuestions(mockQuestions);
-      setIsGenerating(false);
-      setCurrentStep('preview');
-    }, 3000);
-  };
+  // Memoized component for standard/subject/language buttons
+  const MemoizedSelectionButton = React.memo(({ item, isSelected, onPress }: { item: string; isSelected: boolean; onPress: (item: string) => void }) => {
+    return (
+      <TouchableOpacity
+        style={[
+          styles.selectionButton,
+          isSelected && styles.selectedButton
+        ]}
+        onPress={() => onPress(item)}
+      >
+        <Text style={[
+          styles.buttonText,
+          isSelected && styles.selectedButtonText
+        ]}>
+          {item}
+        </Text>
+      </TouchableOpacity>
+    );
+  });
 
-  const calculateTotalMarks = (): number => {
-    return Object.values(examConfig.questionTypes).reduce((total, type) => {
-      return total + (type.count * type.marks);
-    }, 0);
-  };
-
-  const SelectionStep: React.FC = () => (
-    <ScrollView style={styles.container}>
+  return (
+    <ScrollView
+      style={styles.container}
+      keyboardShouldPersistTaps="handled"
+      // Added scrollEventThrottle for smoother scrolling, doesn't change functionality
+      scrollEventThrottle={16}
+      // maintainVisibleContentPosition might not prevent jumps if layout changes above the visible content
+      // but it's good practice to keep it if there's a specific need for keeping an index visible
+      maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 10 }}
+    >
       <View style={styles.card}>
         <Text style={styles.title}>Create Assessment</Text>
         <Text style={styles.subtitle}>
           Select the content parameters for your assessment based on your uploaded materials.
         </Text>
-        
+
         {/* Breadcrumb */}
         <View style={styles.breadcrumb}>
-          <Text style={styles.breadcrumbText}>Standard</Text>
+          <TouchableOpacity onPress={() => { setSelectedCurriculum(''); setSelectedLanguage(''); setSelectedStandard(''); setSelectedSubject(''); setSelectedChapters([]); }}>
+            <Text style={styles.breadcrumbText}>Curriculum</Text>
+          </TouchableOpacity>
+          {selectedCurriculum && (
+            <>
+              <ChevronRight size={scale(16)} color="#9CA3AF" />
+              <TouchableOpacity onPress={() => { setSelectedLanguage(''); setSelectedStandard(''); setSelectedSubject(''); setSelectedChapters([]); }}>
+                <Text style={styles.breadcrumbText}>Language</Text>
+              </TouchableOpacity>
+            </>
+          )}
+          {selectedLanguage && (
+            <>
+              <ChevronRight size={scale(16)} color="#9CA3AF" />
+              <TouchableOpacity onPress={() => { setSelectedStandard(''); setSelectedSubject(''); setSelectedChapters([]); }}>
+                <Text style={styles.breadcrumbText}>Standard</Text>
+              </TouchableOpacity>
+            </>
+          )}
           {selectedStandard && (
             <>
               <ChevronRight size={scale(16)} color="#9CA3AF" />
-              <Text style={styles.breadcrumbText}>Subject</Text>
+              <TouchableOpacity onPress={() => { setSelectedSubject(''); setSelectedChapters([]); }}>
+                <Text style={styles.breadcrumbText}>Subject</Text>
+              </TouchableOpacity>
             </>
           )}
           {selectedSubject && (
             <>
               <ChevronRight size={scale(16)} color="#9CA3AF" />
-              <Text style={styles.breadcrumbText}>Chapter</Text>
-            </>
-          )}
-          {selectedChapters.length > 0 && (
-            <>
-              <ChevronRight size={scale(16)} color="#9CA3AF" />
-              <Text style={styles.breadcrumbText}>Language</Text>
+              <TouchableOpacity onPress={() => { setSelectedChapters([]); }}>
+                <Text style={styles.breadcrumbText}>Chapter</Text>
+              </TouchableOpacity>
             </>
           )}
         </View>
 
-        {/* Standard Selection */}
+        {/* Curriculum Selection */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select Standard/Class</Text>
+          <Text style={styles.sectionTitle}>Select Curriculum</Text>
           <View style={styles.grid}>
-            {availableStandards.map((standard) => (
-              <TouchableOpacity
-                key={standard}
-                style={[
-                  styles.selectionButton,
-                  selectedStandard === standard && styles.selectedButton
-                ]}
-                onPress={() => {
-                  setSelectedStandard(standard);
+            {['State Board', 'CBSE'].map((curriculum) => (
+              <MemoizedSelectionButton
+                key={curriculum}
+                item={curriculum}
+                isSelected={selectedCurriculum === curriculum}
+                onPress={(item) => {
+                  setSelectedCurriculum(item);
+                  setSelectedLanguage(''); // Reset language when curriculum changes
+                  setSelectedStandard('');
                   setSelectedSubject('');
                   setSelectedChapters([]);
-                  setSelectedLanguage('');
+                  if (item === 'CBSE') {
+                      setSelectedLanguage('English'); // Automatically select English for CBSE
+                  }
                 }}
-              >
-                <Text style={[
-                  styles.buttonText,
-                  selectedStandard === standard && styles.selectedButtonText
-                ]}>
-                  {standard}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
           </View>
         </View>
+
+        {/* Language Selection */}
+        {selectedCurriculum && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Select Language</Text>
+            <View style={styles.grid}>
+              {selectedCurriculum === 'CBSE' ? (
+                // Only English for CBSE
+                <MemoizedSelectionButton
+                  key="English"
+                  item="English"
+                  isSelected={selectedLanguage === 'English'}
+                  onPress={(item) => {
+                    setSelectedLanguage(item);
+                    setSelectedStandard('');
+                    setSelectedSubject('');
+                    setSelectedChapters([]);
+                  }}
+                />
+              ) : (
+                // Both Tamil and English for State Board
+                availableLanguagesForStateBoard.map((language) => (
+                  <MemoizedSelectionButton
+                    key={language}
+                    item={language}
+                    isSelected={selectedLanguage === language}
+                    onPress={(item) => {
+                      setSelectedLanguage(item);
+                      setSelectedStandard('');
+                      setSelectedSubject('');
+                      setSelectedChapters([]);
+                    }}
+                  />
+                ))
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Standard Selection */}
+        {selectedLanguage && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Select Standard/Class</Text>
+            <View style={styles.grid}>
+              {availableStandards.map((standard) => (
+                <MemoizedSelectionButton
+                  key={standard}
+                  item={standard}
+                  isSelected={selectedStandard === standard}
+                  onPress={(item) => {
+                    setSelectedStandard(item);
+                    setSelectedSubject('');
+                    setSelectedChapters([]);
+                  }}
+                />
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* Subject Selection */}
         {selectedStandard && (
@@ -293,25 +382,15 @@ const Assessment: React.FC = () => {
             <Text style={styles.sectionTitle}>Select Subject</Text>
             <View style={styles.grid}>
               {availableSubjects.map((subject) => (
-                <TouchableOpacity
+                <MemoizedSelectionButton
                   key={subject}
-                  style={[
-                    styles.selectionButton,
-                    selectedSubject === subject && styles.selectedButton
-                  ]}
-                  onPress={() => {
-                    setSelectedSubject(subject);
+                  item={subject}
+                  isSelected={selectedSubject === subject}
+                  onPress={(item) => {
+                    setSelectedSubject(item);
                     setSelectedChapters([]);
-                    setSelectedLanguage('');
                   }}
-                >
-                  <Text style={[
-                    styles.buttonText,
-                    selectedSubject === subject && styles.selectedButtonText
-                  ]}>
-                    {subject}
-                  </Text>
-                </TouchableOpacity>
+                />
               ))}
             </View>
           </View>
@@ -323,54 +402,19 @@ const Assessment: React.FC = () => {
             <Text style={styles.sectionTitle}>Select Chapter(s)</Text>
             <View style={styles.grid}>
               {availableChapters.map((chapter) => (
-                <TouchableOpacity
+                <MemoizedChapterButton
                   key={chapter}
-                  style={[
-                    styles.selectionButton,
-                    selectedChapters.includes(chapter) && styles.selectedButton
-                  ]}
-                  onPress={() => toggleChapterSelection(chapter)}
-                >
-                  <Text style={[
-                    styles.buttonText,
-                    selectedChapters.includes(chapter) && styles.selectedButtonText
-                  ]}>
-                    {chapter}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Language Selection */}
-        {selectedChapters.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Select Language</Text>
-            <View style={styles.grid}>
-              {availableLanguages.map((language) => (
-                <TouchableOpacity
-                  key={language}
-                  style={[
-                    styles.selectionButton,
-                    selectedLanguage === language && styles.selectedButton
-                  ]}
-                  onPress={() => setSelectedLanguage(language)}
-                >
-                  <Text style={[
-                    styles.buttonText,
-                    selectedLanguage === language && styles.selectedButtonText
-                  ]}>
-                    {language}
-                  </Text>
-                </TouchableOpacity>
+                  chapter={chapter}
+                  isSelected={selectedChapters.includes(chapter)}
+                  onPress={toggleChapterSelection} // Passed memoized callback
+                />
               ))}
             </View>
           </View>
         )}
 
         {/* Continue Button */}
-        {selectedLanguage && (
+        {selectedChapters.length > 0 && (
           <View style={styles.actionContainer}>
             <TouchableOpacity
               style={styles.primaryButton}
@@ -384,9 +428,41 @@ const Assessment: React.FC = () => {
       </View>
     </ScrollView>
   );
+};
 
-  const ConfigureStep: React.FC = () => (
-    <ScrollView style={styles.container}>
+// Define ConfigureStep component outside of Assessment
+interface ConfigureStepProps {
+  selectedCurriculum: string;
+  selectedStandard: string;
+  selectedSubject: string;
+  selectedChapters: string[];
+  selectedLanguage: string;
+  examConfig: ExamConfig;
+  setExamConfig: React.Dispatch<React.SetStateAction<ExamConfig>>;
+  setCurrentStep: React.Dispatch<React.SetStateAction<CurrentStep>>;
+  calculateTotalMarks: () => number;
+  generateQuestions: () => Promise<void>;
+}
+
+const ConfigureStep: React.FC<ConfigureStepProps> = ({
+  selectedCurriculum,
+  selectedStandard,
+  selectedSubject,
+  selectedChapters,
+  selectedLanguage,
+  examConfig,
+  setExamConfig,
+  setCurrentStep,
+  calculateTotalMarks,
+  generateQuestions,
+}) => {
+  return (
+    <ScrollView
+      style={styles.container}
+      keyboardShouldPersistTaps="handled"
+      scrollEventThrottle={16}
+      maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 10 }}
+    >
       <View style={styles.card}>
         <Text style={styles.title}>Configure Assessment</Text>
         <Text style={styles.subtitle}>Set up the parameters for your assessment.</Text>
@@ -395,6 +471,10 @@ const Assessment: React.FC = () => {
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Selected Content</Text>
           <View style={styles.summaryGrid}>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryLabel}>Curriculum:</Text>
+              <Text style={styles.summaryValue}>{selectedCurriculum}</Text>
+            </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Standard:</Text>
               <Text style={styles.summaryValue}>{selectedStandard}</Text>
@@ -427,7 +507,7 @@ const Assessment: React.FC = () => {
               placeholder="60"
             />
           </View>
-          
+
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Difficulty Level</Text>
             <View style={styles.difficultyContainer}>
@@ -455,12 +535,12 @@ const Assessment: React.FC = () => {
         {/* Question Types */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Question Types</Text>
-          
+
           {Object.keys(examConfig.questionTypes).map((key) => {
             const typeKey = key as keyof typeof examConfig.questionTypes;
             const title = typeKey.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
             const config = examConfig.questionTypes[typeKey];
-            
+
             return (
               <View key={typeKey} style={styles.questionTypeCard}>
                 <View style={styles.questionTypeHeader}>
@@ -530,18 +610,35 @@ const Assessment: React.FC = () => {
       </View>
     </ScrollView>
   );
+};
 
-  const GeneratingStep: React.FC = () => (
-    <View style={styles.centerContainer}>
-      <ActivityIndicator size="large" color="#2563EB" />
-      <Text style={styles.generatingTitle}>Generating Assessment</Text>
-      <Text style={styles.generatingSubtitle}>
-        AI is analyzing your content and creating customized questions...
-      </Text>
-    </View>
-  );
+const GeneratingStep: React.FC = () => (
+  <View style={styles.centerContainer}>
+    <ActivityIndicator size="large" color="#2563EB" />
+    <Text style={styles.generatingTitle}>Generating Assessment</Text>
+    <Text style={styles.generatingSubtitle}>
+      AI is analyzing your content and creating customized questions...
+    </Text>
+  </View>
+);
 
-  const PreviewStep: React.FC = () => (
+const PreviewStep: React.FC = ({
+  selectedCurriculum,
+  selectedStandard,
+  selectedSubject,
+  selectedChapters,
+  selectedLanguage,
+  examConfig,
+  setExamConfig,
+  setCurrentStep,
+  calculateTotalMarks,
+  generatedQuestions,
+  setGeneratedQuestions,
+  showPdfPreview,
+  setShowPdfPreview,
+  navigate,
+}) => {
+  return (
     <ScrollView style={styles.container}>
       <View style={styles.card}>
         <View style={styles.previewHeader}>
@@ -565,12 +662,24 @@ const Assessment: React.FC = () => {
         {/* Assessment Info */}
         <View style={styles.assessmentInfo}>
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Subject</Text>
+            <Text style={styles.infoLabel}>Curriculum:</Text>
+            <Text style={styles.infoValue}>{selectedCurriculum}</Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>Standard:</Text>
+            <Text style={styles.infoValue}>{selectedStandard}</Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>Subject:</Text>
             <Text style={styles.infoValue}>{selectedSubject}</Text>
           </View>
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Chapters</Text>
+            <Text style={styles.infoLabel}>Chapters:</Text>
             <Text style={styles.infoValue}>{selectedChapters.join(', ')}</Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>Language:</Text>
+            <Text style={styles.infoValue}>{selectedLanguage}</Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>Total Marks</Text>
@@ -607,9 +716,9 @@ const Assessment: React.FC = () => {
                   </TouchableOpacity>
                 </View>
               </View>
-              
+
               <Text style={styles.questionText}>{question.question}</Text>
-              
+
               {question.type === 'multiple-choice' && question.options && (
                 <View style={styles.optionsContainer}>
                   {question.options.map((option, optionIndex) => (
@@ -635,7 +744,7 @@ const Assessment: React.FC = () => {
                   ))}
                 </View>
               )}
-              
+
               {question.type === 'true-false' && (
                 <View style={styles.trueFalseContainer}>
                   <View style={[
@@ -704,21 +813,161 @@ const Assessment: React.FC = () => {
       </View>
     </ScrollView>
   );
+};
+
+
+const Assessment: React.FC = () => {
+  const [selectedCurriculum, setSelectedCurriculum] = useState<string>('');
+  const [selectedStandard, setSelectedStandard] = useState<string>('');
+  const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [selectedChapters, setSelectedChapters] = useState<string[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('');
+  const [currentStep, setCurrentStep] = useState<CurrentStep>('selection');
+  const [examConfig, setExamConfig] = useState<ExamConfig>({
+    totalMarks: 50,
+    duration: 60,
+    questionTypes: {
+      'multiple-choice': { count: 5, marks: 2 },
+      'short-answer': { count: 3, marks: 5 },
+      'true-false': { count: 5, marks: 1 },
+      'match-the-following': { count: 1, marks: 4 },
+    },
+    difficulty: 'mixed'
+  });
+  const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [showPdfPreview, setShowPdfPreview] = useState<boolean>(false);
+  const navigate = useNavigation();
+
+  // Extract unique values from uploaded content
+  const availableStandards = [...new Set(mockUploadedContent.map(item => item.tags.standard))];
+  const availableSubjects = selectedStandard
+    ? [...new Set(mockUploadedContent
+        .filter(item => item.tags.standard === selectedStandard)
+        .map(item => item.tags.subject))]
+    : [];
+  const availableChapters = selectedSubject
+    ? [...new Set(mockUploadedContent
+        .filter(item => item.tags.standard === selectedStandard && item.tags.subject === selectedSubject)
+        .map(item => item.tags.chapter))]
+    : [];
+
+  const availableLanguagesForStateBoard = ['Tamil', 'English']; // Defined here for passing to SelectionStep
+  const availableLanguagesForCBSE = ['English']; // Defined here for passing to SelectionStep
+
+  // Memoized callback for toggling chapter selection
+  const toggleChapterSelection = useCallback((chapter: string) => {
+    setSelectedChapters(prev => {
+      if (prev.includes(chapter)) {
+        return prev.filter(c => c !== chapter);
+      } else {
+        return [...prev, chapter];
+      }
+    });
+  }, []);
+
+  const generateQuestions = async (): Promise<void> => {
+    setIsGenerating(true);
+    setCurrentStep('generate');
+
+    setTimeout(() => {
+      setGeneratedQuestions(mockQuestions);
+      setIsGenerating(false);
+      setCurrentStep('preview');
+    }, 3000);
+  };
+
+  const calculateTotalMarks = (): number => {
+    return Object.values(examConfig.questionTypes).reduce((total, type) => {
+      return total + (type.count * type.marks);
+    }, 0);
+  };
+
 
   const renderStep = () => {
     if (isGenerating) return <GeneratingStep />;
     switch (currentStep) {
       case 'selection':
-        return <SelectionStep />;
+        return (
+          <SelectionStep
+            selectedCurriculum={selectedCurriculum}
+            setSelectedCurriculum={setSelectedCurriculum}
+            selectedStandard={selectedStandard}
+            setSelectedStandard={setSelectedStandard}
+            selectedSubject={selectedSubject}
+            setSelectedSubject={setSelectedSubject}
+            selectedChapters={selectedChapters}
+            setSelectedChapters={setSelectedChapters}
+            selectedLanguage={selectedLanguage}
+            setSelectedLanguage={setSelectedLanguage}
+            setCurrentStep={setCurrentStep}
+            availableStandards={availableStandards}
+            availableSubjects={availableSubjects}
+            availableChapters={availableChapters}
+            availableLanguagesForStateBoard={availableLanguagesForStateBoard}
+            availableLanguagesForCBSE={availableLanguagesForCBSE}
+            toggleChapterSelection={toggleChapterSelection}
+          />
+        );
       case 'configure':
-        return <ConfigureStep />;
+        return (
+          <ConfigureStep
+            selectedCurriculum={selectedCurriculum}
+            selectedStandard={selectedStandard}
+            selectedSubject={selectedSubject}
+            selectedChapters={selectedChapters}
+            selectedLanguage={selectedLanguage}
+            examConfig={examConfig}
+            setExamConfig={setExamConfig}
+            setCurrentStep={setCurrentStep}
+            calculateTotalMarks={calculateTotalMarks}
+            generateQuestions={generateQuestions}
+          />
+        );
       case 'preview':
-        return <PreviewStep />;
+        return (
+          <PreviewStep
+            selectedCurriculum={selectedCurriculum}
+            selectedStandard={selectedStandard}
+            selectedSubject={selectedSubject}
+            selectedChapters={selectedChapters}
+            selectedLanguage={selectedLanguage}
+            examConfig={examConfig}
+            setExamConfig={setExamConfig} // Although not used directly in PreviewStep, good to pass consistent props
+            setCurrentStep={setCurrentStep}
+            calculateTotalMarks={calculateTotalMarks}
+            generatedQuestions={generatedQuestions}
+            setGeneratedQuestions={setGeneratedQuestions} // Although not used directly in PreviewStep, good to pass consistent props
+            showPdfPreview={showPdfPreview}
+            setShowPdfPreview={setShowPdfPreview}
+            navigate={navigate}
+          />
+        );
       default:
-        return <SelectionStep />;
+        return (
+          <SelectionStep
+            selectedCurriculum={selectedCurriculum}
+            setSelectedCurriculum={setSelectedCurriculum}
+            selectedStandard={selectedStandard}
+            setSelectedStandard={setSelectedStandard}
+            selectedSubject={selectedSubject}
+            setSelectedSubject={setSelectedSubject}
+            selectedChapters={selectedChapters}
+            setSelectedChapters={setSelectedChapters}
+            selectedLanguage={selectedLanguage}
+            setSelectedLanguage={setSelectedLanguage}
+            setCurrentStep={setCurrentStep}
+            availableStandards={availableStandards}
+            availableSubjects={availableSubjects}
+            availableChapters={availableChapters}
+            availableLanguagesForStateBoard={availableLanguagesForStateBoard}
+            availableLanguagesForCBSE={availableLanguagesForCBSE}
+            toggleChapterSelection={toggleChapterSelection}
+          />
+        );
     }
   };
-  
+
   const progressSteps = [
     { key: 'selection', label: 'Select', icon: FileText },
     { key: 'configure', label: 'Configure', icon: Settings },
@@ -741,7 +990,7 @@ const Assessment: React.FC = () => {
               const Icon = step.icon;
               const isActive = index === currentStepIndex;
               const isCompleted = index < currentStepIndex;
-              
+
               return (
                 <React.Fragment key={step.key}>
                   <View style={styles.progressStepContainer}>
@@ -768,7 +1017,7 @@ const Assessment: React.FC = () => {
             })}
           </View>
         </View>
-        
+
         {/* Step Content */}
         {renderStep()}
 
@@ -793,13 +1042,14 @@ const Assessment: React.FC = () => {
                 <View style={styles.pdfHeader}>
                   <Text style={styles.pdfTitle}>{selectedSubject} Assessment</Text>
                   <View style={styles.pdfInfo}>
+                    <Text style={styles.pdfInfoText}>Curriculum: {selectedCurriculum}</Text>
                     <Text style={styles.pdfInfoText}>Class: {selectedStandard}</Text>
                     <Text style={styles.pdfInfoText}>Chapters: {selectedChapters.join(', ')}</Text>
                     <Text style={styles.pdfInfoText}>Total Marks: {calculateTotalMarks()}</Text>
                     <Text style={styles.pdfInfoText}>Time: {examConfig.duration} minutes</Text>
                   </View>
                 </View>
-                
+
                 <View style={styles.pdfQuestions}>
                   {generatedQuestions.map((question, index) => (
                     <View key={question.id} style={styles.pdfQuestion}>
@@ -808,7 +1058,7 @@ const Assessment: React.FC = () => {
                         <Text style={styles.pdfQuestionText}>{question.question}</Text>
                         <Text style={styles.pdfQuestionMarks}>({question.marks} marks)</Text>
                       </View>
-                      
+
                       {question.type === 'multiple-choice' && 'options' in question && (
                         <View style={styles.pdfOptions}>
                           {question.options.map((option, optionIndex) => (
@@ -846,7 +1096,7 @@ const Assessment: React.FC = () => {
                     </View>
                   ))}
                 </View>
-                
+
                 <View style={styles.pdfAnswerKey}>
                   <Text style={styles.pdfAnswerKeyTitle}>--- Answer Key ---</Text>
                   {generatedQuestions.map((q, i) => {
@@ -944,9 +1194,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
   },
   card: {
-    // backgroundColor: '#FFFFFF',
-   
-    // padding: width * 0.05, // Responsive padding
     marginBottom: scale(16),
   },
   title: {

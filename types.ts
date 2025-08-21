@@ -4,4 +4,5 @@ export type RootStackParamList = {
   TestCustomizer: undefined;
   ExamApp: undefined;
   Assessment: undefined;
+  Library:undefined;
 };
