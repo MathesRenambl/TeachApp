@@ -1,19 +1,40 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Dimensions, Alert, ActivityIndicator } from 'react-native';
-import { useState } from "react";
-import { useNavigation } from "expo-router";
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../../../types';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Alert, ActivityIndicator, Modal } from 'react-native';
+import { MaterialIcons as Icon } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+
 const { width, height } = Dimensions.get('window');
 
-type Navigation = NativeStackNavigationProp<RootStackParamList, 'TeacherApp'>;
+interface UploadedFile {
+    id: string;
+    name: string;
+    type: 'pdf' | 'image';
+    size: string;
+    uploadDate: string;
+    status: 'processing' | 'completed' | 'failed';
+    tags: {
+        standard: string;
+        subject: string;
+        chapter: string;
+        language: string;
+    };
+}
 
 interface TagModalState {
     visible: boolean;
     uploadType: 'pdf' | 'image' | null;
 }
 
-const UploadTab = () => {
+interface UploadTabProps {
+    onFilesProcessed?: (files: UploadedFile[]) => void;
+}
 
+const UploadTab: React.FC<UploadTabProps> = ({ onFilesProcessed }) => {
+    const [selectedFiles, setSelectedFiles] = useState<UploadedFile[]>([]);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+
+    // Tag selection states
     const [tagModal, setTagModal] = useState<TagModalState>({ visible: false, uploadType: null });
     const [selectedTags, setSelectedTags] = useState({
         standard: '',
@@ -21,7 +42,6 @@ const UploadTab = () => {
         chapter: '',
         language: '',
     });
-    const navigation = useNavigation<Navigation>();
 
     const generateUniqueId = () => {
         const timestamp = Date.now();
@@ -38,13 +58,6 @@ const UploadTab = () => {
         languages: ['English', 'Tamil', 'Hindi', 'Telugu', 'Kannada', 'Malayalam', 'Bengali', 'Gujarati', 'Marathi', 'Punjabi'],
     };
 
-    const resetOptions = () => {
-        setTeachFromContent(false);
-        setCreateExam(false);
-        setGenerateQuiz(false);
-        setCreateAssignment(false);
-    };
-
     const resetTags = () => {
         setSelectedTags({
             standard: '',
@@ -52,17 +65,6 @@ const UploadTab = () => {
             chapter: '',
             language: '',
         });
-    };
-
-    const resetAssessmentCreation = () => {
-        setAssessmentCreation({
-            showSlider: false,
-            selectedStandard: '',
-            selectedSubject: '',
-            selectedChapter: '',
-            showAssessmentOptions: false,
-        });
-        resetOptions();
     };
 
     const openTagModal = (type: 'pdf' | 'image') => {
@@ -80,62 +82,6 @@ const UploadTab = () => {
             ...prev,
             [category]: value,
         }));
-    };
-
-    const handleAssessmentTagSelection = (category: 'selectedStandard' | 'selectedSubject' | 'selectedChapter', value: string) => {
-        setAssessmentCreation(prev => ({
-            ...prev,
-            [category]: value,
-        }));
-
-        // Check if all three selections are made
-        const updatedState = { ...assessmentCreation, [category]: value };
-        if (updatedState.selectedStandard && updatedState.selectedSubject && updatedState.selectedChapter) {
-            setAssessmentCreation(prev => ({
-                ...prev,
-                [category]: value,
-                showAssessmentOptions: true,
-            }));
-        }
-    };
-
-    const handleCreateAssessmentClick = () => {
-        setAssessmentCreation(prev => ({
-            ...prev,
-            showSlider: true,
-        }));
-    };
-
-    const handleAssessmentGeneration = () => {
-        if (!teachFromContent && !createExam && !generateQuiz && !createAssignment) {
-            Alert.alert('No Assessment Type Selected', 'Please select at least one assessment type to create.');
-            return;
-        }
-
-        const actions = [];
-        if (teachFromContent) actions.push('Interactive Teaching Content');
-        if (createExam) actions.push('Comprehensive Exam');
-        if (generateQuiz) actions.push('Quick Quiz');
-        if (createAssignment) actions.push('Assignment Tasks');
-
-        const { selectedStandard, selectedSubject, selectedChapter } = assessmentCreation;
-
-        Alert.alert(
-            'Creating Assessment',
-            `Creating ${actions.join(', ')} for:\n\nClass: ${selectedStandard}\nSubject: ${selectedSubject}\nChapter: ${selectedChapter}\n\nThis may take a few minutes.`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Create Assessment',
-                    onPress: () => {
-                        console.log('Assessment creation started...');
-                        resetAssessmentCreation();
-                        Alert.alert('Success', 'Assessment has been created successfully!');
-                        navigation.navigate('Assessment');
-                    },
-                },
-            ]
-        );
     };
 
     const validateAndProceedUpload = () => {
@@ -170,7 +116,6 @@ const UploadTab = () => {
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 const file = result.assets[0];
 
-                resetOptions();
                 setUploadProgress(0);
 
                 const mockFile: UploadedFile = {
@@ -212,7 +157,6 @@ const UploadTab = () => {
                     style: 'destructive',
                     onPress: () => {
                         setSelectedFiles(prev => prev.filter(file => file.id !== fileId));
-                        resetOptions();
                     },
                 },
             ]
@@ -234,157 +178,162 @@ const UploadTab = () => {
                     text: 'Start Processing',
                     onPress: () => {
                         console.log('Processing started...');
-                        setLibraryFiles(prev => [...prev, ...selectedFiles]);
+                        if (onFilesProcessed) {
+                            onFilesProcessed(selectedFiles);
+                        }
                         setSelectedFiles([]);
-                        resetOptions();
                         Alert.alert('Success', 'Content has been processed and moved to the Library.');
-                        navigation.navigate('TestCustomizer');
                     },
                 },
             ]
         );
     };
 
-    const handleCheckboxPress = (setter: React.Dispatch<React.SetStateAction<boolean>>) => {
-        setter((prev: any) => !prev);
-    };
-
     const TagSelectionModal = () => (
-        <View style={[styles.modalOverlay, { display: tagModal.visible ? 'flex' : 'none' }]}>
-            <View style={styles.modalContainer}>
-                <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>
-                        Select Tags for {tagModal.uploadType === 'pdf' ? 'PDF' : 'Image'} Upload
-                    </Text>
-                    <TouchableOpacity onPress={closeTagModal} style={styles.modalCloseButton}>
-                        <Icon name="close" size={24} color="#7F8C8D" />
-                    </TouchableOpacity>
-                </View>
-
-                <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-                    {/* Standard Selection */}
-                    <View style={styles.tagSection}>
-                        <Text style={styles.tagSectionTitle}>Standard/Class *</Text>
-                        <View style={styles.tagOptionsContainer}>
-                            {tagOptions.standards.map((standard) => (
-                                <TouchableOpacity
-                                    key={standard}
-                                    style={[
-                                        styles.tagOption,
-                                        selectedTags.standard === standard && styles.tagOptionSelected,
-                                    ]}
-                                    onPress={() => handleTagSelection('standard', standard)}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.tagOptionText,
-                                            selectedTags.standard === standard && styles.tagOptionTextSelected,
-                                        ]}
-                                    >
-                                        {standard}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+        <Modal
+            visible={tagModal.visible}
+            animationType="fade"
+            transparent={true}
+            onRequestClose={closeTagModal}
+        >
+            <View style={styles.modalOverlay}>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>
+                            Select Tags for {tagModal.uploadType === 'pdf' ? 'PDF' : 'Image'} Upload
+                        </Text>
+                        <TouchableOpacity onPress={closeTagModal} style={styles.modalCloseButton}>
+                            <Icon name="close" size={24} color="#7F8C8D" />
+                        </TouchableOpacity>
                     </View>
 
-                    {/* Subject Selection */}
-                    <View style={styles.tagSection}>
-                        <Text style={styles.tagSectionTitle}>Subject *</Text>
-                        <View style={styles.tagOptionsContainer}>
-                            {tagOptions.subjects.map((subject) => (
-                                <TouchableOpacity
-                                    key={subject}
-                                    style={[
-                                        styles.tagOption,
-                                        selectedTags.subject === subject && styles.tagOptionSelected,
-                                    ]}
-                                    onPress={() => handleTagSelection('subject', subject)}
-                                >
-                                    <Text
+                    <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+                        {/* Standard Selection */}
+                        <View style={styles.tagSection}>
+                            <Text style={styles.tagSectionTitle}>Standard/Class *</Text>
+                            <View style={styles.tagOptionsContainer}>
+                                {tagOptions.standards.map((standard) => (
+                                    <TouchableOpacity
+                                        key={standard}
                                         style={[
-                                            styles.tagOptionText,
-                                            selectedTags.subject === subject && styles.tagOptionTextSelected,
+                                            styles.tagOption,
+                                            selectedTags.standard === standard && styles.tagOptionSelected,
                                         ]}
+                                        onPress={() => handleTagSelection('standard', standard)}
                                     >
-                                        {subject}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                        <Text
+                                            style={[
+                                                styles.tagOptionText,
+                                                selectedTags.standard === standard && styles.tagOptionTextSelected,
+                                            ]}
+                                        >
+                                            {standard}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
-                    </View>
 
-                    {/* Chapter Selection */}
-                    <View style={styles.tagSection}>
-                        <Text style={styles.tagSectionTitle}>Chapter *</Text>
-                        <View style={styles.tagOptionsContainer}>
-                            {tagOptions.chapters.map((chapter) => (
-                                <TouchableOpacity
-                                    key={chapter}
-                                    style={[
-                                        styles.tagOption,
-                                        selectedTags.chapter === chapter && styles.tagOptionSelected,
-                                    ]}
-                                    onPress={() => handleTagSelection('chapter', chapter)}
-                                >
-                                    <Text
+                        {/* Subject Selection */}
+                        <View style={styles.tagSection}>
+                            <Text style={styles.tagSectionTitle}>Subject *</Text>
+                            <View style={styles.tagOptionsContainer}>
+                                {tagOptions.subjects.map((subject) => (
+                                    <TouchableOpacity
+                                        key={subject}
                                         style={[
-                                            styles.tagOptionText,
-                                            selectedTags.chapter === chapter && styles.tagOptionTextSelected,
+                                            styles.tagOption,
+                                            selectedTags.subject === subject && styles.tagOptionSelected,
                                         ]}
+                                        onPress={() => handleTagSelection('subject', subject)}
                                     >
-                                        {chapter}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                        <Text
+                                            style={[
+                                                styles.tagOptionText,
+                                                selectedTags.subject === subject && styles.tagOptionTextSelected,
+                                            ]}
+                                        >
+                                            {subject}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
-                    </View>
 
-                    {/* Language Selection */}
-                    <View style={styles.tagSection}>
-                        <Text style={styles.tagSectionTitle}>Language *</Text>
-                        <View style={styles.tagOptionsContainer}>
-                            {tagOptions.languages.map((language) => (
-                                <TouchableOpacity
-                                    key={language}
-                                    style={[
-                                        styles.tagOption,
-                                        selectedTags.language === language && styles.tagOptionSelected,
-                                    ]}
-                                    onPress={() => handleTagSelection('language', language)}
-                                >
-                                    <Text
+                        {/* Chapter Selection */}
+                        <View style={styles.tagSection}>
+                            <Text style={styles.tagSectionTitle}>Chapter *</Text>
+                            <View style={styles.tagOptionsContainer}>
+                                {tagOptions.chapters.map((chapter) => (
+                                    <TouchableOpacity
+                                        key={chapter}
                                         style={[
-                                            styles.tagOptionText,
-                                            selectedTags.language === language && styles.tagOptionTextSelected,
+                                            styles.tagOption,
+                                            selectedTags.chapter === chapter && styles.tagOptionSelected,
                                         ]}
+                                        onPress={() => handleTagSelection('chapter', chapter)}
                                     >
-                                        {language}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                        <Text
+                                            style={[
+                                                styles.tagOptionText,
+                                                selectedTags.chapter === chapter && styles.tagOptionTextSelected,
+                                            ]}
+                                        >
+                                            {chapter}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
-                    </View>
-                </ScrollView>
 
-                <View style={styles.modalActions}>
-                    <TouchableOpacity style={styles.modalCancelButton} onPress={closeTagModal}>
-                        <Text style={styles.modalCancelText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.modalConfirmButton} onPress={validateAndProceedUpload}>
-                        <Text style={styles.modalConfirmText}>Upload File</Text>
-                    </TouchableOpacity>
+                        {/* Language Selection */}
+                        <View style={styles.tagSection}>
+                            <Text style={styles.tagSectionTitle}>Language *</Text>
+                            <View style={styles.tagOptionsContainer}>
+                                {tagOptions.languages.map((language) => (
+                                    <TouchableOpacity
+                                        key={language}
+                                        style={[
+                                            styles.tagOption,
+                                            selectedTags.language === language && styles.tagOptionSelected,
+                                        ]}
+                                        onPress={() => handleTagSelection('language', language)}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.tagOptionText,
+                                                selectedTags.language === language && styles.tagOptionTextSelected,
+                                            ]}
+                                        >
+                                            {language}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+                    </ScrollView>
+
+                    <View style={styles.modalActions}>
+                        <TouchableOpacity style={styles.modalCancelButton} onPress={closeTagModal}>
+                            <Text style={styles.modalCancelText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.modalConfirmButton} onPress={validateAndProceedUpload}>
+                            <Text style={styles.modalConfirmText}>Upload File</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
-        </View>
+        </Modal>
     );
 
     return (
         <View style={styles.tabContent}>
             <View style={styles.uploadSection}>
                 <Text style={styles.sectionTitle}>Interactive Learning Made Easy</Text>
-                <Text style={styles.sectionSubtitle}>Upload PDF documents or images to turn your resources into impactful learning environments</Text>
-                
+                <Text style={styles.sectionSubtitle}>
+                    Upload PDF documents or images to turn your resources into impactful learning environments
+                </Text>
+
                 <View style={styles.uploadButtons}>
                     <TouchableOpacity
                         style={styles.uploadButton}
@@ -502,95 +451,16 @@ const UploadTab = () => {
                     </TouchableOpacity>
                 </View>
             )}
+
+            {/* Tag Selection Modal */}
+            {TagSelectionModal()}
         </View>
-    )
+    );
 };
 
-export default UploadTab;
-
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F8F9FA',
-    },
-    header: {
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: width * 0.05,
-        paddingVertical: height * 0.02,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E9ECEF',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 5,
-    },
-    headerContent: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    profileIcon: {
-        width: width * 0.12,
-        height: width * 0.12,
-        borderRadius: width * 0.06,
-        backgroundColor: '#E3F2FD',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: width * 0.03,
-    },
-    welcomeText: {
-        fontSize: width * 0.035,
-        color: '#7F8C8D',
-    },
-    teacherName: {
-        fontSize: width * 0.045,
-        fontWeight: '700',
-        color: '#2C3E50',
-    },
-    tabNavigation: {
-        flexDirection: 'row',
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: width * 0.05,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E9ECEF',
-    },
-    tab: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: height * 0.02,
-        borderBottomWidth: 3,
-        borderBottomColor: 'transparent',
-    },
-    activeTab: {
-        borderBottomColor: '#4A90E2',
-    },
-    tabText: {
-        fontSize: width * 0.035,
-        color: '#95A5A6',
-        marginLeft: width * 0.02,
-        fontWeight: '500',
-    },
-    activeTabText: {
-        color: '#4A90E2',
-        fontWeight: '600',
-    },
-    contentContainer: {
-        flex: 1,
-        backgroundColor: '#F8F9FA',
-    },
-    scrollContent: {
-        paddingBottom: height * 0.05,
-    },
     tabContent: {
         flex: 1,
-        padding: width * 0.05,
     },
     uploadSection: {
         marginBottom: height * 0.03,
@@ -817,224 +687,11 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         marginLeft: width * 0.02,
     },
-    emptyState: {
-        alignItems: 'center',
-        paddingVertical: height * 0.05,
-        paddingHorizontal: width * 0.05,
-    },
-    emptyStateTitle: {
-        fontSize: width * 0.05,
-        fontWeight: '600',
-        color: '#2C3E50',
-        marginTop: height * 0.02,
-        marginBottom: height * 0.01,
-        textAlign: 'center',
-    },
-    emptyStateDescription: {
-        fontSize: width * 0.038,
-        color: '#7F8C8D',
-        textAlign: 'center',
-        lineHeight: height * 0.025,
-    },
-    assessmentInitialView: {
-        flex: 1,
-        justifyContent: 'center',
-        minHeight: height * 0.5,
-    },
-    createAssessmentButton: {
-        backgroundColor: '#4A90E2',
-        borderRadius: width * 0.03,
-        marginTop: height * 0.03,
-        marginBottom: height * 0.015,
-        shadowColor: '#4A90E2',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    createAssessmentContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: height * 0.018,
-        paddingHorizontal: width * 0.06,
-    },
-    createAssessmentText: {
-        color: '#FFFFFF',
-        fontSize: width * 0.042,
-        fontWeight: '600',
-        marginLeft: width * 0.02,
-    },
-    viewAssessmentButton: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: width * 0.03,
-        borderWidth: 2,
-        borderColor: '#4A90E2',
-    },
-    viewAssessmentContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: height * 0.016,
-        paddingHorizontal: width * 0.06,
-    },
-    viewAssessmentText: {
-        color: '#4A90E2',
-        fontSize: width * 0.042,
-        fontWeight: '600',
-        marginLeft: width * 0.02,
-    },
-    assessmentCreationView: {
-        flex: 1,
-    },
-    assessmentHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: height * 0.025,
-        paddingVertical: height * 0.01,
-    },
-    backButton: {
-        marginRight: width * 0.04,
-        padding: width * 0.01,
-    },
-    assessmentHeaderTitle: {
-        fontSize: width * 0.05,
-        fontWeight: '700',
-        color: '#2C3E50',
-    },
-    assessmentTagSection: {
-        marginBottom: height * 0.025,
-    },
-    assessmentTagTitle: {
-        fontSize: width * 0.042,
-        fontWeight: '600',
-        color: '#2C3E50',
-        marginBottom: height * 0.012,
-    },
-    horizontalScrollView: {
-        flexGrow: 0,
-    },
-    horizontalScrollContent: {
-        paddingRight: width * 0.05,
-    },
-    assessmentTagOption: {
-        backgroundColor: '#F8F9FA',
-        borderRadius: width * 0.05,
-        paddingVertical: height * 0.01,
-        paddingHorizontal: width * 0.04,
-        marginRight: width * 0.025,
-        borderWidth: 1,
-        borderColor: '#E9ECEF',
-        minWidth: width * 0.2,
-        alignItems: 'center',
-    },
-    assessmentTagOptionSelected: {
-        backgroundColor: '#4A90E2',
-        borderColor: '#4A90E2',
-    },
-    assessmentTagOptionText: {
-        fontSize: width * 0.035,
-        fontWeight: '500',
-        color: '#6C757D',
-        textAlign: 'center',
-    },
-    assessmentTagOptionTextSelected: {
-        color: '#FFFFFF',
-        fontWeight: '600',
-    },
-    selectedTagsSummary: {
-        backgroundColor: '#F8F9FA',
-        borderRadius: width * 0.03,
-        padding: width * 0.04,
-        marginBottom: height * 0.02,
-        borderLeftWidth: 4,
-        borderLeftColor: '#4A90E2',
-    },
-    selectedTagsTitle: {
-        fontSize: width * 0.036,
-        fontWeight: '600',
-        color: '#2C3E50',
-        marginBottom: height * 0.008,
-    },
-    selectedTagsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: width * 0.02,
-    },
-    selectedTag: {
-        backgroundColor: '#4A90E2',
-        borderRadius: width * 0.04,
-        paddingVertical: height * 0.006,
-        paddingHorizontal: width * 0.03,
-    },
-    selectedTagText: {
-        color: '#FFFFFF',
-        fontSize: width * 0.03,
-        fontWeight: '500',
-    },
-    actionsSection: {
-        marginTop: height * 0.02,
-    },
-    sectionHeaderMain: {
-        marginBottom: height * 0.02,
-    },
-    checkboxContainer: {
-        gap: height * 0.015,
-    },
-    checkboxItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        padding: width * 0.04,
-        borderRadius: width * 0.03,
-        borderWidth: 1,
-        borderColor: '#E9ECEF',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    checkbox: {
-        width: width * 0.06,
-        height: width * 0.06,
-        borderRadius: width * 0.015,
-        borderWidth: 2,
-        borderColor: '#BDC3C7',
-        backgroundColor: '#FFFFFF',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: width * 0.04,
-    },
-    checkboxSelected: {
-        backgroundColor: '#4A90E2',
-        borderColor: '#4A90E2',
-    },
-    checkboxContent: {
-        flex: 1,
-        marginRight: width * 0.03,
-    },
-    checkboxTitle: {
-        fontSize: width * 0.038,
-        fontWeight: '600',
-        color: '#2C3E50',
-        marginBottom: height * 0.004,
-    },
-    checkboxDescription: {
-        fontSize: width * 0.032,
-        color: '#7F8C8D',
-        lineHeight: height * 0.022,
-    },
     modalOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 1000,
     },
     modalContainer: {
         backgroundColor: '#FFFFFF',
@@ -1143,3 +800,5 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 });
+
+export default UploadTab;

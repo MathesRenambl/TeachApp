@@ -1,5 +1,5 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Dimensions, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Dimensions, Alert, ActivityIndicator, Modal } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -299,133 +299,140 @@ const TeacherApp: React.FC = () => {
     };
 
     const TagSelectionModal = () => (
-        <View style={[styles.modalOverlay, { display: tagModal.visible ? 'flex' : 'none' }]}>
-            <View style={styles.modalContainer}>
-                <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>
-                        Select Tags for {tagModal.uploadType === 'pdf' ? 'PDF' : 'Image'} Upload
-                    </Text>
-                    <TouchableOpacity onPress={closeTagModal} style={styles.modalCloseButton}>
-                        <Icon name="close" size={24} color="#7F8C8D" />
-                    </TouchableOpacity>
-                </View>
-
-                <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-                    {/* Standard Selection */}
-                    <View style={styles.tagSection}>
-                        <Text style={styles.tagSectionTitle}>Standard/Class *</Text>
-                        <View style={styles.tagOptionsContainer}>
-                            {tagOptions.standards.map((standard) => (
-                                <TouchableOpacity
-                                    key={standard}
-                                    style={[
-                                        styles.tagOption,
-                                        selectedTags.standard === standard && styles.tagOptionSelected,
-                                    ]}
-                                    onPress={() => handleTagSelection('standard', standard)}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.tagOptionText,
-                                            selectedTags.standard === standard && styles.tagOptionTextSelected,
-                                        ]}
-                                    >
-                                        {standard}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+        <Modal
+            visible={tagModal.visible}
+            animationType="fade"
+            transparent={true}
+            onRequestClose={closeTagModal}
+        >
+            <View style={styles.modalOverlay}>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>
+                            Select Tags for {tagModal.uploadType === 'pdf' ? 'PDF' : 'Image'} Upload
+                        </Text>
+                        <TouchableOpacity onPress={closeTagModal} style={styles.modalCloseButton}>
+                            <Icon name="close" size={24} color="#7F8C8D" />
+                        </TouchableOpacity>
                     </View>
 
-                    {/* Subject Selection */}
-                    <View style={styles.tagSection}>
-                        <Text style={styles.tagSectionTitle}>Subject *</Text>
-                        <View style={styles.tagOptionsContainer}>
-                            {tagOptions.subjects.map((subject) => (
-                                <TouchableOpacity
-                                    key={subject}
-                                    style={[
-                                        styles.tagOption,
-                                        selectedTags.subject === subject && styles.tagOptionSelected,
-                                    ]}
-                                    onPress={() => handleTagSelection('subject', subject)}
-                                >
-                                    <Text
+                    <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+                        {/* Standard Selection */}
+                        <View style={styles.tagSection}>
+                            <Text style={styles.tagSectionTitle}>Standard/Class *</Text>
+                            <View style={styles.tagOptionsContainer}>
+                                {tagOptions.standards.map((standard) => (
+                                    <TouchableOpacity
+                                        key={standard}
                                         style={[
-                                            styles.tagOptionText,
-                                            selectedTags.subject === subject && styles.tagOptionTextSelected,
+                                            styles.tagOption,
+                                            selectedTags.standard === standard && styles.tagOptionSelected,
                                         ]}
+                                        onPress={() => handleTagSelection('standard', standard)}
                                     >
-                                        {subject}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                        <Text
+                                            style={[
+                                                styles.tagOptionText,
+                                                selectedTags.standard === standard && styles.tagOptionTextSelected,
+                                            ]}
+                                        >
+                                            {standard}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
-                    </View>
 
-                    {/* Chapter Selection */}
-                    <View style={styles.tagSection}>
-                        <Text style={styles.tagSectionTitle}>Chapter *</Text>
-                        <View style={styles.tagOptionsContainer}>
-                            {tagOptions.chapters.map((chapter) => (
-                                <TouchableOpacity
-                                    key={chapter}
-                                    style={[
-                                        styles.tagOption,
-                                        selectedTags.chapter === chapter && styles.tagOptionSelected,
-                                    ]}
-                                    onPress={() => handleTagSelection('chapter', chapter)}
-                                >
-                                    <Text
+                        {/* Subject Selection */}
+                        <View style={styles.tagSection}>
+                            <Text style={styles.tagSectionTitle}>Subject *</Text>
+                            <View style={styles.tagOptionsContainer}>
+                                {tagOptions.subjects.map((subject) => (
+                                    <TouchableOpacity
+                                        key={subject}
                                         style={[
-                                            styles.tagOptionText,
-                                            selectedTags.chapter === chapter && styles.tagOptionTextSelected,
+                                            styles.tagOption,
+                                            selectedTags.subject === subject && styles.tagOptionSelected,
                                         ]}
+                                        onPress={() => handleTagSelection('subject', subject)}
                                     >
-                                        {chapter}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                        <Text
+                                            style={[
+                                                styles.tagOptionText,
+                                                selectedTags.subject === subject && styles.tagOptionTextSelected,
+                                            ]}
+                                        >
+                                            {subject}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
-                    </View>
 
-                    {/* Language Selection */}
-                    <View style={styles.tagSection}>
-                        <Text style={styles.tagSectionTitle}>Language *</Text>
-                        <View style={styles.tagOptionsContainer}>
-                            {tagOptions.languages.map((language) => (
-                                <TouchableOpacity
-                                    key={language}
-                                    style={[
-                                        styles.tagOption,
-                                        selectedTags.language === language && styles.tagOptionSelected,
-                                    ]}
-                                    onPress={() => handleTagSelection('language', language)}
-                                >
-                                    <Text
+                        {/* Chapter Selection */}
+                        <View style={styles.tagSection}>
+                            <Text style={styles.tagSectionTitle}>Chapter *</Text>
+                            <View style={styles.tagOptionsContainer}>
+                                {tagOptions.chapters.map((chapter) => (
+                                    <TouchableOpacity
+                                        key={chapter}
                                         style={[
-                                            styles.tagOptionText,
-                                            selectedTags.language === language && styles.tagOptionTextSelected,
+                                            styles.tagOption,
+                                            selectedTags.chapter === chapter && styles.tagOptionSelected,
                                         ]}
+                                        onPress={() => handleTagSelection('chapter', chapter)}
                                     >
-                                        {language}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                        <Text
+                                            style={[
+                                                styles.tagOptionText,
+                                                selectedTags.chapter === chapter && styles.tagOptionTextSelected,
+                                            ]}
+                                        >
+                                            {chapter}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
-                    </View>
-                </ScrollView>
 
-                <View style={styles.modalActions}>
-                    <TouchableOpacity style={styles.modalCancelButton} onPress={closeTagModal}>
-                        <Text style={styles.modalCancelText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.modalConfirmButton} onPress={validateAndProceedUpload}>
-                        <Text style={styles.modalConfirmText}>Upload File</Text>
-                    </TouchableOpacity>
+                        {/* Language Selection */}
+                        <View style={styles.tagSection}>
+                            <Text style={styles.tagSectionTitle}>Language *</Text>
+                            <View style={styles.tagOptionsContainer}>
+                                {tagOptions.languages.map((language) => (
+                                    <TouchableOpacity
+                                        key={language}
+                                        style={[
+                                            styles.tagOption,
+                                            selectedTags.language === language && styles.tagOptionSelected,
+                                        ]}
+                                        onPress={() => handleTagSelection('language', language)}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.tagOptionText,
+                                                selectedTags.language === language && styles.tagOptionTextSelected,
+                                            ]}
+                                        >
+                                            {language}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+                    </ScrollView>
+
+                    <View style={styles.modalActions}>
+                        <TouchableOpacity style={styles.modalCancelButton} onPress={closeTagModal}>
+                            <Text style={styles.modalCancelText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.modalConfirmButton} onPress={validateAndProceedUpload}>
+                            <Text style={styles.modalConfirmText}>Upload File</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
-        </View>
+        </Modal>
     );
 
     const UploadTab = () => (
@@ -827,9 +834,9 @@ const TeacherApp: React.FC = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-            
+
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerContent}>
@@ -897,7 +904,7 @@ const TeacherApp: React.FC = () => {
             </View>
 
             {/* Main Content with Global ScrollView */}
-            <ScrollView 
+            <ScrollView
                 style={styles.contentContainer}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -910,7 +917,7 @@ const TeacherApp: React.FC = () => {
 
             {/* Tag Selection Modal */}
             {TagSelectionModal()}
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -1432,21 +1439,16 @@ const styles = StyleSheet.create({
         lineHeight: height * 0.022,
     },
     modalOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 1000,
     },
     modalContainer: {
         backgroundColor: '#FFFFFF',
         borderRadius: width * 0.04,
-        width: width * 0.9,
-        maxHeight: height * 0.8,
+        // width: width * 0.9,
+        // maxHeight: height * 0.8,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.25,
