@@ -80,14 +80,22 @@ interface LibraryTabProps {
 }
 
 const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
-    const [activeSection, setActiveSection] = useState<'public' | 'private'>('private');
+    const [activeSection, setActiveSection] = useState<'public' | 'private'>('public');
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Public Library State
     const [selectedCurriculum, setSelectedCurriculum] = useState<string | null>(null);
     const [selectedMedium, setSelectedMedium] = useState<string | null>(null);
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
     const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
+
+    // Private Library State
+    const [privateCurriculum, setPrivateCurriculum] = useState<string | null>(null);
+    const [privateMedium, setPrivateMedium] = useState<string | null>(null);
+    const [privateClass, setPrivateClass] = useState<string | null>(null);
+    const [privateSubject, setPrivateSubject] = useState<string | null>(null);
+    const [privateSearchQuery, setPrivateSearchQuery] = useState('');
 
     const curriculums = [
         {
@@ -313,7 +321,6 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
             subject: "maths",
             chapter: "Numbers"
         }
-
     ];
 
     const publicBooks = [
@@ -357,6 +364,18 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
             setSelectedMedium(null);
         } else if (selectedCurriculum) {
             setSelectedCurriculum(null);
+        }
+    };
+
+    const handlePrivateBack = () => {
+        if (privateSubject) {
+            setPrivateSubject(null);
+        } else if (privateClass) {
+            setPrivateClass(null);
+        } else if (privateMedium) {
+            setPrivateMedium(null);
+        } else if (privateCurriculum) {
+            setPrivateCurriculum(null);
         }
     };
 
@@ -422,11 +441,68 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
         return breadcrumbs;
     };
 
+    const renderPrivateBreadcrumb = () => {
+        const breadcrumbs = [];
+        if (privateCurriculum) {
+            breadcrumbs.push({
+                label: curriculums.find(c => c.id === privateCurriculum)?.label || '',
+                onPress: () => {
+                    setPrivateCurriculum(null);
+                    setPrivateMedium(null);
+                    setPrivateClass(null);
+                    setPrivateSubject(null);
+                },
+            });
+        }
+        if (privateMedium) {
+            const curriculum = curriculums.find(c => c.id === privateCurriculum);
+            const medium = curriculum?.media.find(m => m.id === privateMedium);
+            if (medium) {
+                breadcrumbs.push({
+                    label: medium.label,
+                    onPress: () => {
+                        setPrivateMedium(null);
+                        setPrivateClass(null);
+                        setPrivateSubject(null);
+                    },
+                });
+            }
+        }
+        if (privateClass) {
+            const classList = privateMedium === 'tamil' ? tamil_classes : classes;
+            breadcrumbs.push({
+                label: classList.find(c => c.id === privateClass)?.label || '',
+                onPress: () => {
+                    setPrivateClass(null);
+                    setPrivateSubject(null);
+                },
+            });
+        }
+        if (privateSubject) {
+            const subjectList = privateMedium === 'tamil' ? tamil_subjects[privateClass as keyof typeof tamil_subjects] : subjects[privateClass as keyof typeof subjects];
+            breadcrumbs.push({
+                label: subjectList?.find(s => s.id === privateSubject)?.label || '',
+                onPress: () => {
+                    setPrivateSubject(null);
+                },
+            });
+        }
+        return breadcrumbs;
+    };
+
     const currentClasses = selectedMedium === 'tamil' ? tamil_classes : classes;
     const currentSubjects = selectedMedium === 'tamil' ? tamil_subjects[selectedClass as keyof typeof tamil_subjects] : subjects[selectedClass as keyof typeof subjects];
     const currentChapters = selectedMedium === 'tamil' ? tamil_chapters[selectedSubject as keyof typeof tamil_chapters] : chapters[selectedSubject as keyof typeof chapters];
     const currentPdfs = selectedMedium === 'tamil' ? tamil_pdfs : uploadedPdfs;
 
+    const privateCurrentClasses = privateMedium === 'tamil' ? tamil_classes : classes;
+    const privateCurrentSubjects = privateMedium === 'tamil' ? tamil_subjects[privateClass as keyof typeof tamil_subjects] : subjects[privateClass as keyof typeof subjects];
+    const privateCurrentChapters = privateMedium === 'tamil' ? tamil_chapters[privateSubject as keyof typeof tamil_chapters] : chapters[privateSubject as keyof typeof chapters];
+
+    // Filter chapters based on search query
+    const filteredPrivateChapters = privateCurrentChapters?.filter(chapter =>
+        chapter.title.toLowerCase().includes(privateSearchQuery.toLowerCase())
+    ) || [];
 
     return (
         <ScrollView style={styles.container}>
@@ -435,34 +511,12 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                 <TouchableOpacity
                     style={[
                         styles.toggleButton,
-                        activeSection === 'private' && styles.toggleButtonActive,
-                    ]}
-                    onPress={() => setActiveSection('private')}
-                >
-                    <Ionicons
-                        name="globe"
-                        size={16}
-                        color={activeSection === 'private' ? '#10b981' : isDark ? '#9ca3af' : '#6b7280'}
-                    />
-                    <Text
-                        style={[
-                            styles.toggleButtonText,
-                            activeSection === 'private' && styles.toggleButtonTextActive,
-                            !isDark && { color: activeSection === 'private' ? '#10b981' : '#6b7280' },
-                        ]}
-                    >
-                        Public Library
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[
-                        styles.toggleButton,
                         activeSection === 'public' && styles.toggleButtonActive,
                     ]}
                     onPress={() => setActiveSection('public')}
                 >
                     <Ionicons
-                        name="lock-closed"
+                        name="globe"
                         size={16}
                         color={activeSection === 'public' ? '#10b981' : isDark ? '#9ca3af' : '#6b7280'}
                     />
@@ -473,12 +527,34 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                             !isDark && { color: activeSection === 'public' ? '#10b981' : '#6b7280' },
                         ]}
                     >
+                        Public Library
+                    </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[
+                        styles.toggleButton,
+                        activeSection === 'private' && styles.toggleButtonActive,
+                    ]}
+                    onPress={() => setActiveSection('private')}
+                >
+                    <Ionicons
+                        name="lock-closed"
+                        size={16}
+                        color={activeSection === 'private' ? '#10b981' : isDark ? '#9ca3af' : '#6b7280'}
+                    />
+                    <Text
+                        style={[
+                            styles.toggleButtonText,
+                            activeSection === 'private' && styles.toggleButtonTextActive,
+                            !isDark && { color: activeSection === 'private' ? '#10b981' : '#6b7280' },
+                        ]}
+                    >
                         Private Library
                     </Text>
                 </TouchableOpacity>
             </View>
 
-            {activeSection === 'private' ? (
+            {activeSection === 'public' ? (
                 <>
                     {/* Navigation Header */}
                     {(selectedCurriculum || selectedMedium || selectedClass || selectedSubject || selectedChapter) && (
@@ -487,9 +563,6 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                 <Ionicons name="arrow-back" size={20} color={isDark ? '#ADD8E6' : '#0f3be8ff'} />
                             </TouchableOpacity>
                             <View style={styles.breadcrumbContainer}>
-                                {/* <Text style={styles.breadcrumbLabel}>
-                                    Navigate:
-                                </Text> */}
                                 <View style={styles.breadcrumbTextContainer}>
                                     {renderBreadcrumb().map((crumb, index, arr) => (
                                         <View key={index} style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -745,56 +818,270 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                 </>
             ) : (
                 <>
-                    {/* Public Library Section */}
-                    <View style={styles.searchContainer}>
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Search private books..."
-                            placeholderTextColor={isDark ? '#9ca3af' : '#6b7280'}
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                        />
-                        <Ionicons
-                            name="search"
-                            size={20}
-                            color="#9ca3af"
-                            style={styles.searchIcon}
-                        />
-                    </View>
+                    {/* Private Library Navigation Header */}
+                    {(privateCurriculum || privateMedium || privateClass || privateSubject) && (
+                        <View style={styles.navigationHeader}>
+                            <TouchableOpacity onPress={handlePrivateBack} style={styles.backButton}>
+                                <Ionicons name="arrow-back" size={20} color={isDark ? '#ADD8E6' : '#0f3be8ff'} />
+                            </TouchableOpacity>
+                            <View style={styles.breadcrumbContainer}>
+                                <View style={styles.breadcrumbTextContainer}>
+                                    {renderPrivateBreadcrumb().map((crumb, index, arr) => (
+                                        <View key={index} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                            <TouchableOpacity onPress={crumb.onPress}>
+                                                <Text style={styles.breadcrumbText}>{crumb.label}</Text>
+                                            </TouchableOpacity>
+                                            {index < arr.length - 1 && (
+                                                <Text style={styles.breadcrumbSeparator}> {'>'} </Text>
+                                            )}
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        </View>
+                    )}
 
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Featured Books</Text>
-                        <View style={styles.bookList}>
-                            {publicBooks.map(book => (
-                                <Card key={book.id}>
-                                    <View style={styles.bookItem}>
-                                        <Image source={{ uri: book.thumbnail }} style={styles.bookThumbnail} />
-                                        <View style={styles.bookInfo}>
-                                            <Text style={styles.bookTitle}>
-                                                {book.title}
-                                            </Text>
-                                            <Text style={styles.bookAuthor}>
-                                                by {book.author}
-                                            </Text>
-                                            <Text style={styles.bookGrade}>{book.grade}</Text>
-                                            <View style={styles.bookMeta}>
-                                                <Text style={styles.bookMetaText}>⭐ {book.rating}</Text>
-                                                <Text style={styles.bookMetaText}>⬇️ {book.downloads}</Text>
+                    {/* Private Library - Curriculum Selection */}
+                    {!privateCurriculum && (
+                        <View style={styles.section}>
+                             <View style={styles.searchContainer}>
+                                <TextInput
+                                    style={styles.searchInput}
+                                    placeholder="Search books..."
+                                    placeholderTextColor={isDark ? '#9ca3af' : '#6b7280'}
+                                    value={privateSearchQuery}
+                                    onChangeText={setPrivateSearchQuery}
+                                />
+                                <Ionicons
+                                    name="search"
+                                    size={20}
+                                    color="#9ca3af"
+                                    style={styles.searchIcon}
+                                />
+                            </View>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>Select Curriculum</Text>
+                                {/* <Button variant="outline" size="sm">
+                                    Upload PDF
+                                </Button> */}
+                            </View>
+                            <View style={styles.grid}>
+                                {curriculums.map(item => (
+                                    <Card key={item.id} style={styles.gridItem}>
+                                        <TouchableOpacity
+                                            onPress={() => setPrivateCurriculum(item.id)}
+                                            style={styles.classItem}
+                                        >
+                                            <View style={styles.classItemHeader}>
+                                                <Image
+                                                    source={{ uri: `https://picsum.photos/seed/private-${item.id}/48` }}
+                                                    style={styles.itemIcon}
+                                                />
+                                                <View style={styles.classInfo}>
+                                                    <Text style={styles.classLabel}>
+                                                        {item.label}
+                                                    </Text>
+                                                    <Text style={styles.classCount}>
+                                                        {item.bookCount} books
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                            <View style={styles.classFooter}>
+                                                <Text style={styles.classFooterText}>
+                                                    📚 {item.bookCount} PDFs
+                                                </Text>
+                                                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+                                            </View>
+                                        </TouchableOpacity>
+                                    </Card>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Private Library - Medium Selection */}
+                    {privateCurriculum && !privateMedium && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Select Medium</Text>
+                            <View style={styles.grid}>
+                                {(curriculums.find(c => c.id === privateCurriculum)?.media || []).map(medium => (
+                                    <Card key={medium.id} style={styles.gridItem}>
+                                        <TouchableOpacity
+                                            onPress={() => setPrivateMedium(medium.id)}
+                                            style={styles.classItem}
+                                        >
+                                            <View style={styles.classItemHeader}>
+                                                <Image
+                                                    source={{ uri: `https://picsum.photos/seed/private-${medium.id}-${privateCurriculum}/48` }}
+                                                    style={styles.itemIcon}
+                                                />
+                                                <View style={styles.classInfo}>
+                                                    <Text style={styles.classLabel}>
+                                                        {medium.label}
+                                                    </Text>
+                                                    <Text style={styles.classCount}>
+                                                        {medium.bookCount} books
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                            <View style={styles.classFooter}>
+                                                <Text style={styles.classFooterText}>
+                                                    📚 {medium.bookCount} PDFs
+                                                </Text>
+                                                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+                                            </View>
+                                        </TouchableOpacity>
+                                    </Card>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Private Library - Class Selection */}
+                    {privateMedium && !privateClass && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Select Class</Text>
+                            <View style={styles.grid}>
+                                {privateCurrentClasses.map(classItem => (
+                                    <Card key={classItem.id} style={styles.gridItem}>
+                                        <TouchableOpacity
+                                            onPress={() => setPrivateClass(classItem.id)}
+                                            style={styles.classItem}
+                                        >
+                                            <View style={styles.classItemHeader}>
+                                                <Image
+                                                    source={{ uri: `https://picsum.photos/seed/private-${classItem.id}/48` }}
+                                                    style={styles.itemIcon}
+                                                />
+                                                <View style={styles.classInfo}>
+                                                    <Text style={styles.classLabel}>
+                                                        {classItem.label}
+                                                    </Text>
+                                                    <Text style={styles.classCount}>
+                                                        {classItem.bookCount} books
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                            <View style={styles.classFooter}>
+                                                <Text style={styles.classFooterText}>
+                                                    📚 {classItem.bookCount} PDFs
+                                                </Text>
+                                                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+                                            </View>
+                                        </TouchableOpacity>
+                                    </Card>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Private Library - Subject Selection */}
+                    {privateClass && !privateSubject && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Select Subject</Text>
+                            <View style={styles.grid}>
+                                {(privateCurrentSubjects || []).map(subject => (
+                                    <Card key={subject.id} style={styles.gridItem}>
+                                        <TouchableOpacity
+                                            onPress={() => setPrivateSubject(subject.id)}
+                                            style={styles.classItem}
+                                        >
+                                            <View style={styles.classItemHeader}>
+                                                <Image
+                                                    source={{ uri: `https://picsum.photos/seed/private-${subject.id}-${privateClass}/48` }}
+                                                    style={styles.itemIcon}
+                                                />
+                                                <View style={styles.classInfo}>
+                                                    <Text style={styles.classLabel}>
+                                                        {subject.label}
+                                                    </Text>
+                                                    <Text style={styles.classCount}>
+                                                        {subject.chapterCount} chapters
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                            <View style={styles.classFooter}>
+                                                <Text style={styles.classFooterText}>
+                                                    📄 {subject.chapterCount} chapters
+                                                </Text>
+                                                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+                                            </View>
+                                        </TouchableOpacity>
+                                    </Card>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Private Library - Chapter List with Search */}
+                    {privateSubject && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Chapters</Text>
+                            
+                            {/* Search Input */}
+                            {/* <View style={styles.searchContainer}>
+                                <TextInput
+                                    style={styles.searchInput}
+                                    placeholder="Search chapters..."
+                                    placeholderTextColor={isDark ? '#9ca3af' : '#6b7280'}
+                                    value={privateSearchQuery}
+                                    onChangeText={setPrivateSearchQuery}
+                                />
+                                <Ionicons
+                                    name="search"
+                                    size={20}
+                                    color="#9ca3af"
+                                    style={styles.searchIcon}
+                                />
+                            </View> */}
+
+                            <View style={styles.chapterList}>
+                                {filteredPrivateChapters.map(chapter => (
+                                    <Card key={chapter.id}>
+                                        <View style={styles.chapterItem}>
+                                            <View style={styles.chapterItemHeader}>
+                                                <Image
+                                                    source={{ uri: `https://picsum.photos/seed/private-${chapter.id}-${privateSubject}/40` }}
+                                                    style={styles.chapterItemIcon}
+                                                />
+                                                <View>
+                                                    <Text style={styles.chapterTitle}>
+                                                        {chapter.title}
+                                                    </Text>
+                                                    <Text style={styles.chapterCount}>
+                                                        {chapter.pdfCount} PDFs available
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                            <View style={styles.chapterActions}>
+                                                <TouchableOpacity style={styles.pdfActionButton}>
+                                                    <Ionicons name="eye" size={16} color="#10b981" />
+                                                </TouchableOpacity>
+                                                <TouchableOpacity style={styles.pdfActionButton}>
+                                                    <Ionicons name="download" size={16} color="#9ca3af" />
+                                                </TouchableOpacity>
+                                                <TouchableOpacity style={styles.pdfActionButton}>
+                                                    <Ionicons name="ellipsis-vertical" size={16} color="#9ca3af" />
+                                                </TouchableOpacity>
                                             </View>
                                         </View>
-                                        <View style={styles.bookActions}>
-                                            <Button size="sm" style={styles.downloadButton}>
-                                                ⬇️ Download
-                                            </Button>
-                                            <TouchableOpacity style={styles.favoriteButton}>
-                                                <Ionicons name="heart-outline" size={16} color="#9ca3af" />
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-                                </Card>
-                            ))}
+                                    </Card>
+                                ))}
+                            </View>
+
+                            {filteredPrivateChapters.length === 0 && privateSearchQuery && (
+                                <View style={styles.noResultsContainer}>
+                                    <Ionicons name="search" size={48} color="#9ca3af" />
+                                    <Text style={styles.noResultsText}>
+                                        No chapters found for "{privateSearchQuery}"
+                                    </Text>
+                                    <Text style={styles.noResultsSubText}>
+                                        Try searching with different keywords
+                                    </Text>
+                                </View>
+                            )}
                         </View>
-                    </View>
+                    )}
                 </>
             )}
         </ScrollView>
@@ -804,9 +1091,7 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        // paddingHorizontal: 16,
         paddingTop: 16,
-        // paddingBottom: 80,
     },
 
     // Button Styles
@@ -950,7 +1235,6 @@ const styles = StyleSheet.create({
         fontWeight: '400',
         color: 'black'
     },
-
     breadcrumbTextContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -962,10 +1246,9 @@ const styles = StyleSheet.create({
         marginHorizontal: 4,
     },
 
-
     // Section
     section: {
-        // marginBottom: 16,
+        marginBottom: 16,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -982,7 +1265,6 @@ const styles = StyleSheet.create({
     // Grid
     grid: {
         flexDirection: 'row',
-        // flexWrap: 'wrap',
     },
     gridItem: {
         width: (width - 44) / 2,
@@ -999,13 +1281,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
     },
-    // ADDED: New styles for the images
     itemIcon: {
         width: 48,
         height: 48,
         borderRadius: 8,
         marginRight: 12,
-        backgroundColor: '#f3f4f6', // Light gray background for loading
+        backgroundColor: '#f3f4f6',
     },
     classInfo: {
         flex: 1,
@@ -1042,13 +1323,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flex: 1,
     },
-    //styles for chapter images
     chapterItemIcon: {
         width: 40,
         height: 40,
         borderRadius: 8,
         marginRight: 12,
-        backgroundColor: '#f3f4f6', // Light gray background for loading
+        backgroundColor: '#f3f4f6',
     },
     chapterTitle: {
         fontSize: 16,
@@ -1057,6 +1337,10 @@ const styles = StyleSheet.create({
     chapterCount: {
         fontSize: 12,
         color: '#6b7280',
+    },
+    chapterActions: {
+        flexDirection: 'row',
+        gap: 8,
     },
 
     // PDF List
@@ -1067,13 +1351,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    // styles for PDF images
     pdfItemIcon: {
         width: 48,
         height: 48,
         borderRadius: 8,
         marginRight: 16,
-        backgroundColor: '#f3f4f6', // Light gray background for loading
+        backgroundColor: '#f3f4f6',
     },
     pdfInfo: {
         flex: 1,
@@ -1125,7 +1408,26 @@ const styles = StyleSheet.create({
         top: 12,
     },
 
-    // Book List
+    // No Results
+    noResultsContainer: {
+        alignItems: 'center',
+        paddingVertical: 40,
+    },
+    noResultsText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#6b7280',
+        marginTop: 16,
+        textAlign: 'center',
+    },
+    noResultsSubText: {
+        fontSize: 14,
+        color: '#9ca3af',
+        marginTop: 8,
+        textAlign: 'center',
+    },
+
+    // Book List (for public library)
     bookList: {
         gap: 12,
     },

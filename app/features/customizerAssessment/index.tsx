@@ -834,6 +834,8 @@ const CustomizerAssessment: React.FC = () => {
         },
         difficulty: 'mixed'
     });
+
+    console.log(examConfig)
     const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [showPdfPreview, setShowPdfPreview] = useState<boolean>(false);

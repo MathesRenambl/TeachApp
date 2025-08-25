@@ -236,7 +236,7 @@ const Assessment: React.FC = () => {
                     <View style={styles.headerContent}>
                         <View style={styles.headerText}>
                             <Text style={styles.headerTitle}>Assessment Center</Text>
-                            <Text style={styles.headerSubtitle}>Create and manage assessments for your children</Text>
+                            <Text style={styles.headerSubtitle}>Create and manage assessments for your student or children</Text>
                         </View>
                         <View style={styles.headerIcon}>
                             <Icon name="assignment" size={32} color="rgba(255,255,255,0.8)" />
