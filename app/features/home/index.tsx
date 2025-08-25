@@ -4,7 +4,7 @@ import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types';
-
+import { LinearGradient } from 'expo-linear-gradient';
 // Import components
 import Upload from '../uploadTopTab/index';
 import Library from '../libraryTopTab';
@@ -230,7 +230,8 @@ const styles = StyleSheet.create({
     },
     tabContent: {
         flex: 1,
-        padding: width * 0.05,
+        // marginTop: width * 0.05,
+        paddingHorizontal: width * 0.04,
     },
 });
 
