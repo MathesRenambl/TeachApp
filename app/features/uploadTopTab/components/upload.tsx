@@ -106,6 +106,8 @@ const UploadComponent: React.FC<UploadComponentProps> = ({
                     progress: 0
                 }));
 
+                console.log('uploaded PDF',newFiles)
+
                 setUploadingFiles(prev => [...prev, ...newFiles]);
                 setUploadModalVisible(false);
                 onUploadStart?.();

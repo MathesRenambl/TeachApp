@@ -1,18 +1,11 @@
 import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
-    Dimensions,
-    ScrollView,
-    SafeAreaView
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types';
 import { useNavigation } from '@react-navigation/native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -233,31 +226,41 @@ const Assessment: React.FC = () => {
             <View style={styles.container}>
                 {/* Header Card */}
                 <View style={styles.headerCard}>
-                    <View style={styles.headerContent}>
-                        <View style={styles.headerText}>
-                            <Text style={styles.headerTitle}>Assessment Center</Text>
-                            <Text style={styles.headerSubtitle}>Create and manage assessments for your student or children</Text>
+                    <LinearGradient
+                        colors={['#667eea', '#764ba2']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.gradientBackground}
+                    >
+                        <View style={styles.headerContent}>
+                            <View style={styles.headerText}>
+                                <Text style={styles.headerTitle}>Assessment Center</Text>
+                                <Text style={styles.headerSubtitle}>
+                                    Create and manage assessments for your student or children
+                                </Text>
+                            </View>
+                            <View style={styles.headerIcon}>
+                                <Icon name="assignment" size={32} color="rgba(255,255,255,0.8)" />
+                            </View>
                         </View>
-                        <View style={styles.headerIcon}>
-                            <Icon name="assignment" size={32} color="rgba(255,255,255,0.8)" />
-                        </View>
-                    </View>
 
-                    <View style={styles.statsContainer}>
-                        <View style={styles.statItem}>
-                            <Text style={styles.statNumber}>{currentData.stats.total}</Text>
-                            <Text style={styles.statLabel}>Total</Text>
+                        <View style={styles.statsContainer}>
+                            <View style={styles.statItem}>
+                                <Text style={styles.statNumber}>{currentData.stats.total}</Text>
+                                <Text style={styles.statLabel}>Total</Text>
+                            </View>
+                            <View style={styles.statItem}>
+                                <Text style={styles.statNumber}>{currentData.stats.active}</Text>
+                                <Text style={styles.statLabel}>Active</Text>
+                            </View>
+                            <View style={styles.statItem}>
+                                <Text style={styles.statNumber}>{currentData.stats.avgScore}%</Text>
+                                <Text style={styles.statLabel}>Avg Score</Text>
+                            </View>
                         </View>
-                        <View style={styles.statItem}>
-                            <Text style={styles.statNumber}>{currentData.stats.active}</Text>
-                            <Text style={styles.statLabel}>Active</Text>
-                        </View>
-                        <View style={styles.statItem}>
-                            <Text style={styles.statNumber}>{currentData.stats.avgScore}%</Text>
-                            <Text style={styles.statLabel}>Avg Score</Text>
-                        </View>
-                    </View>
+                    </LinearGradient>
                 </View>
+
 
                 {/* Filter Categories */}
                 <ScrollView
@@ -285,16 +288,25 @@ const Assessment: React.FC = () => {
                 </ScrollView>
 
                 {/* Create Assessment Button */}
-                <TouchableOpacity
-                    style={styles.createAssessmentButton}
-                    onPress={handleCreateAssessmentClick}
-                    activeOpacity={0.8}
+
+                <LinearGradient
+                    colors={['#43e97b', '#38f9d7']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.gradientButtonBackground} // handles gradient & rounded corners
                 >
-                    <View style={styles.createAssessmentContent}>
-                        <Icon name="add" size={24} color="#FFFFFF" />
-                        <Text style={styles.createAssessmentText}>Create New Assessment</Text>
-                    </View>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.createAssessmentButton}
+                        onPress={handleCreateAssessmentClick}
+                        activeOpacity={0.8}
+                    >
+                        <View style={styles.createAssessmentContent}>
+                            <Icon name="add" size={24} color="#FFFFFF" />
+                            <Text style={styles.createAssessmentText}>Create New Assessment</Text>
+                        </View>
+                    </TouchableOpacity>
+                </LinearGradient>
+
 
                 {/* Recent Assessments */}
                 <Text style={styles.sectionTitle}>Recent Assessments</Text>
@@ -335,7 +347,7 @@ const Assessment: React.FC = () => {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,    
+        flex: 1,
         backgroundColor: '#F9FAFB',
     },
     scrollView: {
@@ -344,15 +356,18 @@ const styles = StyleSheet.create({
         paddingTop: height * 0.02,
     },
     headerCard: {
-        backgroundColor: '#8B5CF6',
         borderRadius: width * 0.04,
-        padding: width * 0.04,
         marginBottom: height * 0.02,
         shadowColor: '#8B5CF6',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 6,
+        overflow: 'hidden', // clip gradient inside rounded corners
+    },
+    gradientBackground: {
+        borderRadius: width * 0.04,
+        padding: width * 0.04,
     },
     headerContent: {
         flexDirection: 'row',
@@ -409,7 +424,7 @@ const styles = StyleSheet.create({
         marginRight: width * 0.02,
     },
     categoryButtonActive: {
-        backgroundColor: '#8B5CF6',
+        backgroundColor: '#5108fbfb',
     },
     categoryText: {
         color: '#6B7280',
@@ -419,8 +434,7 @@ const styles = StyleSheet.create({
     categoryTextActive: {
         color: '#FFFFFF',
     },
-    createAssessmentButton: {
-        backgroundColor: '#10B981',
+    gradientButtonBackground: {
         borderRadius: width * 0.03,
         marginBottom: height * 0.02,
         shadowColor: '#10B981',
@@ -429,6 +443,12 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 6,
     },
+
+    createAssessmentButton: {
+        borderRadius: width * 0.03,
+        overflow: 'hidden', // keeps touch area inside rounded gradient
+    },
+
     createAssessmentContent: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -442,6 +462,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginLeft: width * 0.02,
     },
+
     sectionTitle: {
         fontSize: width * 0.045,
         fontWeight: '600',

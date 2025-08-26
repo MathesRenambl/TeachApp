@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, SafeAreaView, StatusBar, Dimensions, View } from 'react-native';
+import { ScrollView, StyleSheet, StatusBar, Dimensions, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types';
@@ -13,6 +13,7 @@ import Dashboard from '../uploadTopTab/index'
 // import Upload from '../uploadTopTab/index';
 import Library from '../libraryTopTab';
 import Assessment from '../assessmentTopTab/index';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -144,12 +145,12 @@ const TeacherApp: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
             
             {/* Profile Header */}
             <ProfileHeader
                 teacherName="Gokul Thirumal"
-                notificationCount={3}
+                notificationCount={0}
                 onNotificationPress={handleNotificationPress}
             />
 
@@ -184,7 +185,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8F9FA',
     },
     scrollContent: {
-        paddingBottom: height * 0.05,
+        // paddingBottom: height * 0.05,
     },
     tabContent: {
         flex: 1,

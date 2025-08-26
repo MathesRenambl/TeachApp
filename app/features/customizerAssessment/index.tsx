@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, SafeAreaView, Dimensions, } from 'react-native';
-import { ChevronRight, Plus, Edit3, Trash2, Download, Eye, FileText, Settings, Save, } from 'lucide-react-native';
+import { ChevronRight, Plus, Edit3, Trash2, Download, Eye, FileText, Settings, Save, Languages, } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
@@ -836,10 +836,26 @@ const CustomizerAssessment: React.FC = () => {
     });
 
     console.log(examConfig)
+    console.log(currentStep)
+
     const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [showPdfPreview, setShowPdfPreview] = useState<boolean>(false);
     const navigate = useNavigation();
+
+
+    useEffect(()=>{
+        const chapterNumbers = (selectedChapters.map(chapter => (chapter.replace('Chapter ', ''))));
+        const selectedContent={
+            curriculum:selectedCurriculum,
+            standard:selectedStandard,
+            subject:selectedSubject,
+            chapters:chapterNumbers,
+            language:selectedLanguage,
+        };
+        console.log('Selected Content JSON:', JSON.stringify(selectedContent, null, 2));
+    }, [selectedCurriculum, selectedStandard, selectedSubject, selectedChapters, selectedLanguage]);
+    console.log(generatedQuestions)
 
     // Extract unique values from uploaded content
     const availableStandards = [...new Set(mockUploadedContent.map(item => item.tags.standard))];

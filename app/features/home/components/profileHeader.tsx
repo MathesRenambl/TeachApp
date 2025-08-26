@@ -16,7 +16,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     notificationCount = 3,
     onNotificationPress
 }) => {
-    return (
+    return (     
         <View style={styles.header}>
             <View style={styles.headerContent}>
                 <View style={styles.headerLeft}>
@@ -55,13 +55,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: width * 0.05,
         paddingVertical: height * 0.02,
         borderBottomWidth: 1,
-        borderBottomColor: '#E9ECEF',
-        shadowColor: '#000',
+        borderBottomColor: '#FFFFFF',
+        shadowColor: '#FFFFFF',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 3,
         elevation: 5,
-        marginTop:-8
     },
     headerContent: {
         flexDirection: 'row',

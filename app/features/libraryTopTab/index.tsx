@@ -10,10 +10,11 @@ import {
     Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-// Button Component
+// Button Component with gradient styling
 interface ButtonProps {
     children: React.ReactNode;
     onPress?: () => void;
@@ -45,6 +46,28 @@ const Button: React.FC<ButtonProps> = ({
         styles[`buttonText${size.charAt(0).toUpperCase() + size.slice(1)}`],
     ];
 
+    if (variant === 'primary') {
+        return (
+            <TouchableOpacity
+                onPress={disabled ? undefined : onPress}
+                disabled={disabled}
+                activeOpacity={0.7}
+                style={[styles.buttonBase, styles.buttonSm, style]}
+            >
+                <LinearGradient
+                    colors={['#667eea', '#764ba2']}
+                    style={styles.gradientButton}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <Text style={[styles.buttonTextBase, styles.buttonTextPrimary, styles.buttonTextSm]}>
+                        {children}
+                    </Text>
+                </LinearGradient>
+            </TouchableOpacity>
+        );
+    }
+
     return (
         <TouchableOpacity
             style={buttonStyle}
@@ -57,14 +80,33 @@ const Button: React.FC<ButtonProps> = ({
     );
 };
 
-// Card Component
+// Card Component with gradient styling
 interface CardProps {
     children: React.ReactNode;
     style?: any;
     padding?: 'sm' | 'md' | 'lg';
+    gradient?: string[];
 }
 
-const Card: React.FC<CardProps> = ({ children, style, padding = 'md' }) => {
+const Card: React.FC<CardProps> = ({ children, style, padding = 'md', gradient }) => {
+    if (gradient) {
+        return (
+            <View style={[styles.cardBase, style]}>
+                <LinearGradient
+                    colors={gradient}
+                    style={[
+                        styles.gradientCard,
+                        styles[`cardPadding${padding.charAt(0).toUpperCase() + padding.slice(1)}`],
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    {children}
+                </LinearGradient>
+            </View>
+        );
+    }
+
     const cardStyle = [
         styles.cardBase,
         styles[`cardPadding${padding.charAt(0).toUpperCase() + padding.slice(1)}`],
@@ -102,16 +144,19 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
             id: 'stateboard',
             label: 'State Board',
             bookCount: 25,
+            gradient: ['#667eea', '#764ba2'],
             media: [
                 {
                     id: 'tamil',
                     label: 'Tamil Medium',
-                    bookCount: 15
+                    bookCount: 15,
+                    gradient: ['#f093fb', '#f5576c']
                 },
                 {
                     id: 'english',
                     label: 'English Medium',
-                    bookCount: 10
+                    bookCount: 10,
+                    gradient: ['#4facfe', '#00f2fe']
                 }
             ]
         },
@@ -119,84 +164,89 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
             id: 'cbse',
             label: 'CBSE',
             bookCount: 20,
+            gradient: ['#43e97b', '#38f9d7'],
             media: [
                 {
                     id: 'english',
                     label: 'English medium',
-                    bookCount: 20
+                    bookCount: 20,
+                    gradient: ['#4facfe', '#00f2fe']
                 }
             ]
         }
     ];
 
     const classes = [
-        { id: 'class1', label: 'Class 1', bookCount: 8 },
-        { id: 'class2', label: 'Class 2', bookCount: 12 },
-        { id: 'class3', label: 'Class 3', bookCount: 15 },
-        { id: 'class4', label: 'Class 4', bookCount: 18 },
-        { id: 'class5', label: 'Class 5', bookCount: 20 },
+        { id: 'class1', label: 'Class 1', bookCount: 8, gradient: ['#667eea', '#764ba2'] },
+        { id: 'class2', label: 'Class 2', bookCount: 12, gradient: ['#f093fb', '#f5576c'] },
+        { id: 'class3', label: 'Class 3', bookCount: 15, gradient: ['#4facfe', '#00f2fe'] },
+        { id: 'class4', label: 'Class 4', bookCount: 18, gradient: ['#43e97b', '#38f9d7'] },
+        { id: 'class5', label: 'Class 5', bookCount: 20, gradient: ['#ff6b6b', '#feca57'] },
     ];
 
     const tamil_classes = [
         {
             id: 'class1_tamil',
             label: 'class 1',
-            bookCount: 8
+            bookCount: 8,
+            gradient: ['#667eea', '#764ba2']
         },
         {
             id: 'class2_tamil',
             label: 'class 2',
-            bookCount: 12
+            bookCount: 12,
+            gradient: ['#f093fb', '#f5576c']
         },
         {
             id: 'class3_tamil',
             label: 'class 3',
-            bookCount: 15
+            bookCount: 15,
+            gradient: ['#4facfe', '#00f2fe']
         }
     ];
 
     const subjects = {
         class1: [
-            { id: 'english', label: 'English', chapterCount: 5 },
-            { id: 'maths', label: 'Mathematics', chapterCount: 6 },
-            { id: 'science', label: 'Science', chapterCount: 4 },
+            { id: 'english', label: 'English', chapterCount: 5, gradient: ['#667eea', '#764ba2'] },
+            { id: 'maths', label: 'Mathematics', chapterCount: 6, gradient: ['#f093fb', '#f5576c'] },
+            { id: 'science', label: 'Science', chapterCount: 4, gradient: ['#4facfe', '#00f2fe'] },
         ],
         class2: [
-            { id: 'english', label: 'English', chapterCount: 6 },
-            { id: 'maths', label: 'Mathematics', chapterCount: 8 },
-            { id: 'science', label: 'Science', chapterCount: 5 },
-            { id: 'social', label: 'Social Studies', chapterCount: 4 },
+            { id: 'english', label: 'English', chapterCount: 6, gradient: ['#667eea', '#764ba2'] },
+            { id: 'maths', label: 'Mathematics', chapterCount: 8, gradient: ['#f093fb', '#f5576c'] },
+            { id: 'science', label: 'Science', chapterCount: 5, gradient: ['#4facfe', '#00f2fe'] },
+            { id: 'social', label: 'Social Studies', chapterCount: 4, gradient: ['#43e97b', '#38f9d7'] },
         ],
         class3: [
-            { id: 'english', label: 'English', chapterCount: 8 },
-            { id: 'maths', label: 'Mathematics', chapterCount: 10 },
-            { id: 'science', label: 'Science', chapterCount: 7 },
-            { id: 'social', label: 'Social Studies', chapterCount: 6 },
+            { id: 'english', label: 'English', chapterCount: 8, gradient: ['#667eea', '#764ba2'] },
+            { id: 'maths', label: 'Mathematics', chapterCount: 10, gradient: ['#f093fb', '#f5576c'] },
+            { id: 'science', label: 'Science', chapterCount: 7, gradient: ['#4facfe', '#00f2fe'] },
+            { id: 'social', label: 'Social Studies', chapterCount: 6, gradient: ['#43e97b', '#38f9d7'] },
         ],
         class4: [
-            { id: 'english', label: 'English', chapterCount: 10 },
-            { id: 'maths', label: 'Mathematics', chapterCount: 12 },
-            { id: 'science', label: 'Science', chapterCount: 9 },
-            { id: 'social', label: 'Social Studies', chapterCount: 8 },
+            { id: 'english', label: 'English', chapterCount: 10, gradient: ['#667eea', '#764ba2'] },
+            { id: 'maths', label: 'Mathematics', chapterCount: 12, gradient: ['#f093fb', '#f5576c'] },
+            { id: 'science', label: 'Science', chapterCount: 9, gradient: ['#4facfe', '#00f2fe'] },
+            { id: 'social', label: 'Social Studies', chapterCount: 8, gradient: ['#43e97b', '#38f9d7'] },
         ],
         class5: [
-            { id: 'english', label: 'English', chapterCount: 12 },
-            { id: 'maths', label: 'Mathematics', chapterCount: 15 },
-            { id: 'science', label: 'Science', chapterCount: 11 },
-            { id: 'social', label: 'Social Studies', chapterCount: 10 },
+            { id: 'english', label: 'English', chapterCount: 12, gradient: ['#667eea', '#764ba2'] },
+            { id: 'maths', label: 'Mathematics', chapterCount: 15, gradient: ['#f093fb', '#f5576c'] },
+            { id: 'science', label: 'Science', chapterCount: 11, gradient: ['#4facfe', '#00f2fe'] },
+            { id: 'social', label: 'Social Studies', chapterCount: 10, gradient: ['#43e97b', '#38f9d7'] },
         ],
     };
 
     const tamil_subjects = {
         class1_tamil: [
-            { id: 'tamil_s1', label: 'Tamil', chapterCount: 5 },
-            { id: 'maths_s1', label: 'Maths', chapterCount: 6 },
-            { id: 'science_s1', label: 'Science', chapterCount: 4 }
+            { id: 'tamil_s1', label: 'Tamil', chapterCount: 5, gradient: ['#667eea', '#764ba2'] },
+            { id: 'maths_s1', label: 'Maths', chapterCount: 6, gradient: ['#f093fb', '#f5576c'] },
+            { id: 'science_s1', label: 'Science', chapterCount: 4, gradient: ['#4facfe', '#00f2fe'] }
         ],
         class2_tamil: [
-            { id: 'tamil_s2', label: 'Tamil', chapterCount: 6 },
-            { id: 'maths_s2', label: 'Maths', chapterCount: 8 },
-            { id: 'science_s2', label: 'Science', chapterCount: 5 }
+            { id: 'tamil_s2', label: 'Tamil', chapterCount: 6, gradient: ['#667eea', '#764ba2'] },
+            { id: 'maths_s2', label: 'Maths', chapterCount: 8, gradient: ['#f093fb', '#f5576c'] },
+            { id: 'science_s2', label: 'Science', chapterCount: 5, gradient: ['#4facfe', '#00f2fe'] }
         ]
     };
 
@@ -505,593 +555,483 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
     ) || [];
 
     return (
-        <ScrollView style={styles.container}>
-            {/* Section Toggle */}
-            <View style={styles.sectionToggle}>
-                <TouchableOpacity
-                    style={[
-                        styles.toggleButton,
-                        activeSection === 'public' && styles.toggleButtonActive,
-                    ]}
-                    onPress={() => setActiveSection('public')}
-                >
-                    <Ionicons
-                        name="globe"
-                        size={16}
-                        color={activeSection === 'public' ? '#10b981' : isDark ? '#9ca3af' : '#6b7280'}
-                    />
-                    <Text
+        <View style={styles.container}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Section Toggle */}
+                <View style={styles.sectionToggle}>
+                    <TouchableOpacity
                         style={[
-                            styles.toggleButtonText,
-                            activeSection === 'public' && styles.toggleButtonTextActive,
-                            !isDark && { color: activeSection === 'public' ? '#10b981' : '#6b7280' },
+                            styles.toggleButton,
+                            activeSection === 'public' && styles.toggleButtonActive,
                         ]}
+                        onPress={() => setActiveSection('public')}
                     >
-                        Public Library
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[
-                        styles.toggleButton,
-                        activeSection === 'private' && styles.toggleButtonActive,
-                    ]}
-                    onPress={() => setActiveSection('private')}
-                >
-                    <Ionicons
-                        name="lock-closed"
-                        size={16}
-                        color={activeSection === 'private' ? '#10b981' : isDark ? '#9ca3af' : '#6b7280'}
-                    />
-                    <Text
+                        <Ionicons
+                            name="globe"
+                            size={16}
+                            color={activeSection === 'public' ? '#667eea' : '#9ca3af'}
+                        />
+                        <Text
+                            style={[
+                                styles.toggleButtonText,
+                                activeSection === 'public' && styles.toggleButtonTextActive,
+                            ]}
+                        >
+                            Public Library
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
                         style={[
-                            styles.toggleButtonText,
-                            activeSection === 'private' && styles.toggleButtonTextActive,
-                            !isDark && { color: activeSection === 'private' ? '#10b981' : '#6b7280' },
+                            styles.toggleButton,
+                            activeSection === 'private' && styles.toggleButtonActive,
                         ]}
+                        onPress={() => setActiveSection('private')}
                     >
-                        Private Library
-                    </Text>
-                </TouchableOpacity>
-            </View>
+                        <Ionicons
+                            name="lock-closed"
+                            size={16}
+                            color={activeSection === 'private' ? '#667eea' : '#9ca3af'}
+                        />
+                        <Text
+                            style={[
+                                styles.toggleButtonText,
+                                activeSection === 'private' && styles.toggleButtonTextActive,
+                            ]}
+                        >
+                            Private Library
+                        </Text>
+                    </TouchableOpacity>
+                </View>
 
-            {activeSection === 'public' ? (
-                <>
-                    {/* Navigation Header */}
-                    {(selectedCurriculum || selectedMedium || selectedClass || selectedSubject || selectedChapter) && (
-                        <View style={styles.navigationHeader}>
-                            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                                <Ionicons name="arrow-back" size={20} color={isDark ? '#ADD8E6' : '#0f3be8ff'} />
-                            </TouchableOpacity>
-                            <View style={styles.breadcrumbContainer}>
-                                <View style={styles.breadcrumbTextContainer}>
-                                    {renderBreadcrumb().map((crumb, index, arr) => (
-                                        <View key={index} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                            <TouchableOpacity onPress={crumb.onPress}>
-                                                <Text style={styles.breadcrumbText}>{crumb.label}</Text>
-                                            </TouchableOpacity>
-                                            {index < arr.length - 1 && (
-                                                <Text style={styles.breadcrumbSeparator}> {'>'} </Text>
-                                            )}
-                                        </View>
+                {activeSection === 'public' ? (
+                    <>
+                        {/* Navigation Header */}
+                        {(selectedCurriculum || selectedMedium || selectedClass || selectedSubject || selectedChapter) && (
+                            <View style={styles.navigationHeader}>
+                                <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+                                    <Ionicons name="arrow-back" size={24} color="#667eea" />
+                                </TouchableOpacity>
+                                <View style={styles.breadcrumbContainer}>
+                                    <View style={styles.breadcrumbTextContainer}>
+                                        {renderBreadcrumb().map((crumb, index, arr) => (
+                                            <View key={index} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                <TouchableOpacity onPress={crumb.onPress}>
+                                                    <Text style={styles.breadcrumbText}>{crumb.label}</Text>
+                                                </TouchableOpacity>
+                                                {index < arr.length - 1 && (
+                                                    <Text style={styles.breadcrumbSeparator}> {'>'} </Text>
+                                                )}
+                                            </View>
+                                        ))}
+                                    </View>
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Curriculum Selection */}
+                        {!selectedCurriculum && (
+                            <View style={styles.section}>
+                                <View style={styles.sectionHeader}>
+                                    <Text style={styles.sectionTitle}>Select Curriculum</Text>
+                                    <Button variant="primary" size="sm">
+                                        Upload PDF
+                                    </Button>
+                                </View>
+                                <View style={styles.grid}>
+                                    {curriculums.map(item => (
+                                        <TouchableOpacity key={item.id} onPress={() => setSelectedCurriculum(item.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                            <Card gradient={item.gradient} padding="md">
+                                                <View style={styles.gradientCardContent}>
+                                                    <View style={styles.cardHeader}>
+                                                        <View style={styles.iconContainer}>
+                                                            <Ionicons name="school" size={24} color="#FFFFFF" />
+                                                        </View>
+                                                        <Text style={styles.cardCount}>{item.bookCount}</Text>
+                                                    </View>
+                                                    <Text style={styles.cardTitle}>{item.label}</Text>
+                                                    <Text style={styles.cardSubtitle}>{item.bookCount} books available</Text>
+                                                </View>
+                                            </Card>
+                                        </TouchableOpacity>
                                     ))}
                                 </View>
                             </View>
-                        </View>
-                    )}
+                        )}
 
-                    {/* Curriculum Selection */}
-                    {!selectedCurriculum && (
-                        <View style={styles.section}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Select Curriculum</Text>
-                                <Button variant="outline" size="sm">
-                                    Upload PDF
-                                </Button>
-                            </View>
-                            <View style={styles.grid}>
-                                {curriculums.map(item => (
-                                    <Card key={item.id} style={styles.gridItem}>
-                                        <TouchableOpacity
-                                            onPress={() => setSelectedCurriculum(item.id)}
-                                            style={styles.classItem}
-                                        >
-                                            <View style={styles.classItemHeader}>
-                                                <Image
-                                                    source={{ uri: `https://picsum.photos/seed/${item.id}/48` }}
-                                                    style={styles.itemIcon}
-                                                />
-                                                <View style={styles.classInfo}>
-                                                    <Text style={styles.classLabel}>
-                                                        {item.label}
-                                                    </Text>
-                                                    <Text style={styles.classCount}>
-                                                        {item.bookCount} books
-                                                    </Text>
+                        {/* Medium Selection */}
+                        {selectedCurriculum && !selectedMedium && (
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Select Medium</Text>
+                                <View style={styles.grid}>
+                                    {(curriculums.find(c => c.id === selectedCurriculum)?.media || []).map(medium => (
+                                        <TouchableOpacity key={medium.id} onPress={() => setSelectedMedium(medium.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                            <Card gradient={medium.gradient} padding="md">
+                                                <View style={styles.gradientCardContent}>
+                                                    <View style={styles.cardHeader}>
+                                                        <View style={styles.iconContainer}>
+                                                            <Ionicons name="language" size={24} color="#FFFFFF" />
+                                                        </View>
+                                                        <Text style={styles.cardCount}>{medium.bookCount}</Text>
+                                                    </View>
+                                                    <Text style={styles.cardTitle}>{medium.label}</Text>
+                                                    <Text style={styles.cardSubtitle}>{medium.bookCount} books available</Text>
                                                 </View>
-                                            </View>
-                                            <View style={styles.classFooter}>
-                                                <Text style={styles.classFooterText}>
-                                                    📚 {item.bookCount} PDFs
-                                                </Text>
-                                                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
-                                            </View>
+                                            </Card>
                                         </TouchableOpacity>
-                                    </Card>
-                                ))}
+                                    ))}
+                                </View>
                             </View>
-                        </View>
-                    )}
+                        )}
 
-                    {/* Medium Selection */}
-                    {selectedCurriculum && !selectedMedium && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Select Medium</Text>
-                            <View style={styles.grid}>
-                                {(curriculums.find(c => c.id === selectedCurriculum)?.media || []).map(medium => (
-                                    <Card key={medium.id} style={styles.gridItem}>
-                                        <TouchableOpacity
-                                            onPress={() => setSelectedMedium(medium.id)}
-                                            style={styles.classItem}
-                                        >
-                                            <View style={styles.classItemHeader}>
-                                                <Image
-                                                    source={{ uri: `https://picsum.photos/seed/${medium.id}-${selectedCurriculum}/48` }}
-                                                    style={styles.itemIcon}
-                                                />
-                                                <View style={styles.classInfo}>
-                                                    <Text style={styles.classLabel}>
-                                                        {medium.label}
-                                                    </Text>
-                                                    <Text style={styles.classCount}>
-                                                        {medium.bookCount} books
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                            <View style={styles.classFooter}>
-                                                <Text style={styles.classFooterText}>
-                                                    📚 {medium.bookCount} PDFs
-                                                </Text>
-                                                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
-                                            </View>
-                                        </TouchableOpacity>
-                                    </Card>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-
-                    {/* Class Selection */}
-                    {selectedMedium && !selectedClass && (
-                        <View style={styles.section}>
-                            <View style={styles.sectionHeader}>
+                        {/* Class Selection */}
+                        {selectedMedium && !selectedClass && (
+                            <View style={styles.section}>
                                 <Text style={styles.sectionTitle}>Select Class</Text>
-                            </View>
-                            <View style={styles.grid}>
-                                {currentClasses.map(classItem => (
-                                    <Card key={classItem.id} style={styles.gridItem}>
-                                        <TouchableOpacity
-                                            onPress={() => setSelectedClass(classItem.id)}
-                                            style={styles.classItem}
-                                        >
-                                            <View style={styles.classItemHeader}>
-                                                <Image
-                                                    source={{ uri: `https://picsum.photos/seed/${classItem.id}/48` }}
-                                                    style={styles.itemIcon}
-                                                />
-                                                <View style={styles.classInfo}>
-                                                    <Text style={styles.classLabel}>
-                                                        {classItem.label}
-                                                    </Text>
-                                                    <Text style={styles.classCount}>
-                                                        {classItem.bookCount} books
-                                                    </Text>
+                                <View style={styles.grid}>
+                                    {currentClasses.map(classItem => (
+                                        <TouchableOpacity key={classItem.id} onPress={() => setSelectedClass(classItem.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                            <Card gradient={classItem.gradient} padding="md">
+                                                <View style={styles.gradientCardContent}>
+                                                    <View style={styles.cardHeader}>
+                                                        <View style={styles.iconContainer}>
+                                                            <Ionicons name="library" size={24} color="#FFFFFF" />
+                                                        </View>
+                                                        <Text style={styles.cardCount}>{classItem.bookCount}</Text>
+                                                    </View>
+                                                    <Text style={styles.cardTitle}>{classItem.label}</Text>
+                                                    <Text style={styles.cardSubtitle}>{classItem.bookCount} books available</Text>
                                                 </View>
-                                            </View>
-                                            <View style={styles.classFooter}>
-                                                <Text style={styles.classFooterText}>
-                                                    📚 {classItem.bookCount} PDFs
-                                                </Text>
-                                                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
-                                            </View>
+                                            </Card>
                                         </TouchableOpacity>
-                                    </Card>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-
-                    {/* Subject Selection */}
-                    {selectedClass && !selectedSubject && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Select Subject</Text>
-                            <View style={styles.grid}>
-                                {(currentSubjects || []).map(subject => (
-                                    <Card key={subject.id} style={styles.gridItem}>
-                                        <TouchableOpacity
-                                            onPress={() => setSelectedSubject(subject.id)}
-                                            style={styles.classItem}
-                                        >
-                                            <View style={styles.classItemHeader}>
-                                                <Image
-                                                    source={{ uri: `https://picsum.photos/seed/${subject.id}-${selectedClass}/48` }}
-                                                    style={styles.itemIcon}
-                                                />
-                                                <View style={styles.classInfo}>
-                                                    <Text style={styles.classLabel}>
-                                                        {subject.label}
-                                                    </Text>
-                                                    <Text style={styles.classCount}>
-                                                        {subject.chapterCount} chapters
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                            <View style={styles.classFooter}>
-                                                <Text style={styles.classFooterText}>
-                                                    📄 {subject.chapterCount} chapters
-                                                </Text>
-                                                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
-                                            </View>
-                                        </TouchableOpacity>
-                                    </Card>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-
-                    {/* Chapter Selection */}
-                    {selectedSubject && !selectedChapter && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Select Chapter</Text>
-                            <View style={styles.chapterList}>
-                                {(currentChapters || []).map(chapter => (
-                                    <Card key={chapter.id}>
-                                        <TouchableOpacity
-                                            onPress={() => setSelectedChapter(chapter.id)}
-                                            style={styles.chapterItem}
-                                        >
-                                            <View style={styles.chapterItemHeader}>
-                                                <Image
-                                                    source={{ uri: `https://picsum.photos/seed/${chapter.id}-${selectedSubject}/40` }}
-                                                    style={styles.chapterItemIcon}
-                                                />
-                                                <View>
-                                                    <Text style={styles.chapterTitle}>
-                                                        {chapter.title}
-                                                    </Text>
-                                                    <Text style={styles.chapterCount}>
-                                                        {chapter.pdfCount} PDFs uploaded
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                            <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
-                                        </TouchableOpacity>
-                                    </Card>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-
-                    {/* PDF List */}
-                    {selectedChapter && (
-                        <View style={styles.section}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Uploaded PDFs</Text>
-                                <Button size="sm">Add PDF</Button>
-                            </View>
-                            <View style={styles.pdfList}>
-                                {currentPdfs.map(pdf => (
-                                    <Card key={pdf.id}>
-                                        <View style={styles.pdfItem}>
-                                            <Image
-                                                source={{ uri: `https://picsum.photos/seed/${pdf.fileName}/48` }}
-                                                style={styles.pdfItemIcon}
-                                            />
-                                            <View style={styles.pdfInfo}>
-                                                <Text style={styles.pdfTitle}>
-                                                    {pdf.title}
-                                                </Text>
-                                                <Text style={styles.pdfFileName}>
-                                                    {pdf.fileName}
-                                                </Text>
-                                                <View style={styles.pdfMeta}>
-                                                    <Text style={styles.pdfMetaText}>📄 {pdf.pages} pages</Text>
-                                                    <Text style={styles.pdfMetaText}>💾 {pdf.size}</Text>
-                                                    <Text style={styles.pdfMetaText}>
-                                                        📅 {new Date(pdf.uploadDate).toLocaleDateString()}
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                            <View style={styles.pdfActions}>
-                                                <TouchableOpacity style={styles.pdfActionButton}>
-                                                    <Ionicons name="download" size={16} color="#9ca3af" />
-                                                </TouchableOpacity>
-                                                <TouchableOpacity style={styles.pdfActionButton}>
-                                                    <Ionicons name="ellipsis-vertical" size={16} color="#9ca3af" />
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-                                    </Card>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-                </>
-            ) : (
-                <>
-                    {/* Private Library Navigation Header */}
-                    {(privateCurriculum || privateMedium || privateClass || privateSubject) && (
-                        <View style={styles.navigationHeader}>
-                            <TouchableOpacity onPress={handlePrivateBack} style={styles.backButton}>
-                                <Ionicons name="arrow-back" size={20} color={isDark ? '#ADD8E6' : '#0f3be8ff'} />
-                            </TouchableOpacity>
-                            <View style={styles.breadcrumbContainer}>
-                                <View style={styles.breadcrumbTextContainer}>
-                                    {renderPrivateBreadcrumb().map((crumb, index, arr) => (
-                                        <View key={index} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                            <TouchableOpacity onPress={crumb.onPress}>
-                                                <Text style={styles.breadcrumbText}>{crumb.label}</Text>
-                                            </TouchableOpacity>
-                                            {index < arr.length - 1 && (
-                                                <Text style={styles.breadcrumbSeparator}> {'>'} </Text>
-                                            )}
-                                        </View>
                                     ))}
                                 </View>
                             </View>
-                        </View>
-                    )}
+                        )}
 
-                    {/* Private Library - Curriculum Selection */}
-                    {!privateCurriculum && (
-                        <View style={styles.section}>
-                             <View style={styles.searchContainer}>
-                                <TextInput
-                                    style={styles.searchInput}
-                                    placeholder="Search books..."
-                                    placeholderTextColor={isDark ? '#9ca3af' : '#6b7280'}
-                                    value={privateSearchQuery}
-                                    onChangeText={setPrivateSearchQuery}
-                                />
-                                <Ionicons
-                                    name="search"
-                                    size={20}
-                                    color="#9ca3af"
-                                    style={styles.searchIcon}
-                                />
-                            </View>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Select Curriculum</Text>
-                                {/* <Button variant="outline" size="sm">
-                                    Upload PDF
-                                </Button> */}
-                            </View>
-                            <View style={styles.grid}>
-                                {curriculums.map(item => (
-                                    <Card key={item.id} style={styles.gridItem}>
-                                        <TouchableOpacity
-                                            onPress={() => setPrivateCurriculum(item.id)}
-                                            style={styles.classItem}
-                                        >
-                                            <View style={styles.classItemHeader}>
-                                                <Image
-                                                    source={{ uri: `https://picsum.photos/seed/private-${item.id}/48` }}
-                                                    style={styles.itemIcon}
-                                                />
-                                                <View style={styles.classInfo}>
-                                                    <Text style={styles.classLabel}>
-                                                        {item.label}
-                                                    </Text>
-                                                    <Text style={styles.classCount}>
-                                                        {item.bookCount} books
-                                                    </Text>
+                        {/* Subject Selection */}
+                        {selectedClass && !selectedSubject && (
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Select Subject</Text>
+                                <View style={styles.grid}>
+                                    {(currentSubjects || []).map(subject => (
+                                        <TouchableOpacity key={subject.id} onPress={() => setSelectedSubject(subject.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                            <Card gradient={subject.gradient} padding="md">
+                                                <View style={styles.gradientCardContent}>
+                                                    <View style={styles.cardHeader}>
+                                                        <View style={styles.iconContainer}>
+                                                            <Ionicons name="book" size={24} color="#FFFFFF" />
+                                                        </View>
+                                                        <Text style={styles.cardCount}>{subject.chapterCount}</Text>
+                                                    </View>
+                                                    <Text style={styles.cardTitle}>{subject.label}</Text>
+                                                    <Text style={styles.cardSubtitle}>{subject.chapterCount} chapters</Text>
                                                 </View>
-                                            </View>
-                                            <View style={styles.classFooter}>
-                                                <Text style={styles.classFooterText}>
-                                                    📚 {item.bookCount} PDFs
-                                                </Text>
-                                                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
-                                            </View>
+                                            </Card>
                                         </TouchableOpacity>
-                                    </Card>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-
-                    {/* Private Library - Medium Selection */}
-                    {privateCurriculum && !privateMedium && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Select Medium</Text>
-                            <View style={styles.grid}>
-                                {(curriculums.find(c => c.id === privateCurriculum)?.media || []).map(medium => (
-                                    <Card key={medium.id} style={styles.gridItem}>
-                                        <TouchableOpacity
-                                            onPress={() => setPrivateMedium(medium.id)}
-                                            style={styles.classItem}
-                                        >
-                                            <View style={styles.classItemHeader}>
-                                                <Image
-                                                    source={{ uri: `https://picsum.photos/seed/private-${medium.id}-${privateCurriculum}/48` }}
-                                                    style={styles.itemIcon}
-                                                />
-                                                <View style={styles.classInfo}>
-                                                    <Text style={styles.classLabel}>
-                                                        {medium.label}
-                                                    </Text>
-                                                    <Text style={styles.classCount}>
-                                                        {medium.bookCount} books
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                            <View style={styles.classFooter}>
-                                                <Text style={styles.classFooterText}>
-                                                    📚 {medium.bookCount} PDFs
-                                                </Text>
-                                                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
-                                            </View>
-                                        </TouchableOpacity>
-                                    </Card>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-
-                    {/* Private Library - Class Selection */}
-                    {privateMedium && !privateClass && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Select Class</Text>
-                            <View style={styles.grid}>
-                                {privateCurrentClasses.map(classItem => (
-                                    <Card key={classItem.id} style={styles.gridItem}>
-                                        <TouchableOpacity
-                                            onPress={() => setPrivateClass(classItem.id)}
-                                            style={styles.classItem}
-                                        >
-                                            <View style={styles.classItemHeader}>
-                                                <Image
-                                                    source={{ uri: `https://picsum.photos/seed/private-${classItem.id}/48` }}
-                                                    style={styles.itemIcon}
-                                                />
-                                                <View style={styles.classInfo}>
-                                                    <Text style={styles.classLabel}>
-                                                        {classItem.label}
-                                                    </Text>
-                                                    <Text style={styles.classCount}>
-                                                        {classItem.bookCount} books
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                            <View style={styles.classFooter}>
-                                                <Text style={styles.classFooterText}>
-                                                    📚 {classItem.bookCount} PDFs
-                                                </Text>
-                                                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
-                                            </View>
-                                        </TouchableOpacity>
-                                    </Card>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-
-                    {/* Private Library - Subject Selection */}
-                    {privateClass && !privateSubject && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Select Subject</Text>
-                            <View style={styles.grid}>
-                                {(privateCurrentSubjects || []).map(subject => (
-                                    <Card key={subject.id} style={styles.gridItem}>
-                                        <TouchableOpacity
-                                            onPress={() => setPrivateSubject(subject.id)}
-                                            style={styles.classItem}
-                                        >
-                                            <View style={styles.classItemHeader}>
-                                                <Image
-                                                    source={{ uri: `https://picsum.photos/seed/private-${subject.id}-${privateClass}/48` }}
-                                                    style={styles.itemIcon}
-                                                />
-                                                <View style={styles.classInfo}>
-                                                    <Text style={styles.classLabel}>
-                                                        {subject.label}
-                                                    </Text>
-                                                    <Text style={styles.classCount}>
-                                                        {subject.chapterCount} chapters
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                            <View style={styles.classFooter}>
-                                                <Text style={styles.classFooterText}>
-                                                    📄 {subject.chapterCount} chapters
-                                                </Text>
-                                                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
-                                            </View>
-                                        </TouchableOpacity>
-                                    </Card>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-
-                    {/* Private Library - Chapter List with Search */}
-                    {privateSubject && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Chapters</Text>
-                            
-                            {/* Search Input */}
-                            {/* <View style={styles.searchContainer}>
-                                <TextInput
-                                    style={styles.searchInput}
-                                    placeholder="Search chapters..."
-                                    placeholderTextColor={isDark ? '#9ca3af' : '#6b7280'}
-                                    value={privateSearchQuery}
-                                    onChangeText={setPrivateSearchQuery}
-                                />
-                                <Ionicons
-                                    name="search"
-                                    size={20}
-                                    color="#9ca3af"
-                                    style={styles.searchIcon}
-                                />
-                            </View> */}
-
-                            <View style={styles.chapterList}>
-                                {filteredPrivateChapters.map(chapter => (
-                                    <Card key={chapter.id}>
-                                        <View style={styles.chapterItem}>
-                                            <View style={styles.chapterItemHeader}>
-                                                <Image
-                                                    source={{ uri: `https://picsum.photos/seed/private-${chapter.id}-${privateSubject}/40` }}
-                                                    style={styles.chapterItemIcon}
-                                                />
-                                                <View>
-                                                    <Text style={styles.chapterTitle}>
-                                                        {chapter.title}
-                                                    </Text>
-                                                    <Text style={styles.chapterCount}>
-                                                        {chapter.pdfCount} PDFs available
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                            <View style={styles.chapterActions}>
-                                                <TouchableOpacity style={styles.pdfActionButton}>
-                                                    <Ionicons name="eye" size={16} color="#10b981" />
-                                                </TouchableOpacity>
-                                                <TouchableOpacity style={styles.pdfActionButton}>
-                                                    <Ionicons name="download" size={16} color="#9ca3af" />
-                                                </TouchableOpacity>
-                                                <TouchableOpacity style={styles.pdfActionButton}>
-                                                    <Ionicons name="ellipsis-vertical" size={16} color="#9ca3af" />
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-                                    </Card>
-                                ))}
-                            </View>
-
-                            {filteredPrivateChapters.length === 0 && privateSearchQuery && (
-                                <View style={styles.noResultsContainer}>
-                                    <Ionicons name="search" size={48} color="#9ca3af" />
-                                    <Text style={styles.noResultsText}>
-                                        No chapters found for "{privateSearchQuery}"
-                                    </Text>
-                                    <Text style={styles.noResultsSubText}>
-                                        Try searching with different keywords
-                                    </Text>
+                                    ))}
                                 </View>
-                            )}
-                        </View>
-                    )}
-                </>
-            )}
-        </ScrollView>
+                            </View>
+                        )}
+
+                        {/* Chapter Selection */}
+                        {selectedSubject && !selectedChapter && (
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Select Chapter</Text>
+                                <View style={styles.chapterList}>
+                                    {(currentChapters || []).map((chapter, index) => (
+                                        <TouchableOpacity key={chapter.id} onPress={() => setSelectedChapter(chapter.id)} activeOpacity={0.8}>
+                                            <Card style={styles.chapterCard}>
+                                                <View style={styles.chapterItemContent}>
+                                                    <View style={styles.chapterIconWrapper}>
+                                                        <LinearGradient
+                                                            colors={['#667eea', '#764ba2']}
+                                                            style={styles.chapterIconGradient}
+                                                            start={{ x: 0, y: 0 }}
+                                                            end={{ x: 1, y: 1 }}
+                                                        >
+                                                            <Ionicons name="document-text" size={24} color="#FFFFFF" />
+                                                        </LinearGradient>
+                                                    </View>
+                                                    <View style={styles.chapterInfo}>
+                                                        <Text style={styles.chapterTitleText}>{chapter.title}</Text>
+                                                        <Text style={styles.chapterCountText}>{chapter.pdfCount} PDFs available</Text>
+                                                    </View>
+                                                    <Ionicons name="chevron-forward" size={20} color="#667eea" />
+                                                </View>
+                                            </Card>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+
+                        {/* PDF List */}
+                        {selectedChapter && (
+                            <View style={styles.section}>
+                                <View style={styles.sectionHeader}>
+                                    <Text style={styles.sectionTitle}>Uploaded PDFs</Text>
+                                    <Button size="sm">Add PDF</Button>
+                                </View>
+                                <View style={styles.pdfList}>
+                                    {currentPdfs.map(pdf => (
+                                        <Card key={pdf.id} style={styles.pdfCard}>
+                                            <View style={styles.pdfItemContent}>
+                                                <View style={styles.pdfIconWrapper}>
+                                                    <LinearGradient
+                                                        colors={['#FF6B6B', '#FF8E8E']}
+                                                        style={styles.pdfIconGradient}
+                                                        start={{ x: 0, y: 0 }}
+                                                        end={{ x: 1, y: 1 }}
+                                                    >
+                                                        <Ionicons name="document" size={24} color="#FFFFFF" />
+                                                    </LinearGradient>
+                                                </View>
+                                                <View style={styles.pdfInfo}>
+                                                    <Text style={styles.pdfTitle}>{pdf.title}</Text>
+                                                    <Text style={styles.pdfFileName}>{pdf.fileName}</Text>
+                                                    <View style={styles.pdfMeta}>
+                                                        <Text style={styles.pdfMetaText}>{pdf.pages} pages</Text>
+                                                        <Text style={styles.pdfMetaText}>{pdf.size}</Text>
+                                                        <Text style={styles.pdfMetaText}>
+                                                            {new Date(pdf.uploadDate).toLocaleDateString()}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                                <View style={styles.pdfActions}>
+                                                    <TouchableOpacity style={styles.pdfActionButton}>
+                                                        <Ionicons name="eye" size={20} color="#667eea" />
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity style={styles.pdfActionButton}>
+                                                        <Ionicons name="download" size={20} color="#43e97b" />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            </View>
+                                        </Card>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        {/* Private Library Navigation Header */}
+                        {(privateCurriculum || privateMedium || privateClass || privateSubject) && (
+                            <View style={styles.navigationHeader}>
+                                <TouchableOpacity onPress={handlePrivateBack} style={styles.backButton}>
+                                    <Ionicons name="arrow-back" size={24} color="#667eea" />
+                                </TouchableOpacity>
+                                <View style={styles.breadcrumbContainer}>
+                                    <View style={styles.breadcrumbTextContainer}>
+                                        {renderPrivateBreadcrumb().map((crumb, index, arr) => (
+                                            <View key={index} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                <TouchableOpacity onPress={crumb.onPress}>
+                                                    <Text style={styles.breadcrumbText}>{crumb.label}</Text>
+                                                </TouchableOpacity>
+                                                {index < arr.length - 1 && (
+                                                    <Text style={styles.breadcrumbSeparator}> {'>'} </Text>
+                                                )}
+                                            </View>
+                                        ))}
+                                    </View>
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Private Library - Curriculum Selection */}
+                        {!privateCurriculum && (
+                            <View style={styles.section}>
+                                <View style={styles.searchContainer}>
+                                    <TextInput
+                                        style={styles.searchInput}
+                                        placeholder="Search books..."
+                                        placeholderTextColor="#9ca3af"
+                                        value={privateSearchQuery}
+                                        onChangeText={setPrivateSearchQuery}
+                                    />
+                                    <Ionicons
+                                        name="search"
+                                        size={20}
+                                        color="#9ca3af"
+                                        style={styles.searchIcon}
+                                    />
+                                </View>
+                                <View style={styles.sectionHeader}>
+                                    <Text style={styles.sectionTitle}>Select Curriculum</Text>
+                                </View>
+                                <View style={styles.grid}>
+                                    {curriculums.map(item => (
+                                        <TouchableOpacity key={item.id} onPress={() => setPrivateCurriculum(item.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                            <Card gradient={item.gradient} padding="md">
+                                                <View style={styles.gradientCardContent}>
+                                                    <View style={styles.cardHeader}>
+                                                        <View style={styles.iconContainer}>
+                                                            <Ionicons name="lock-closed" size={24} color="#FFFFFF" />
+                                                        </View>
+                                                        <Text style={styles.cardCount}>{item.bookCount}</Text>
+                                                    </View>
+                                                    <Text style={styles.cardTitle}>{item.label}</Text>
+                                                    <Text style={styles.cardSubtitle}>{item.bookCount} books available</Text>
+                                                </View>
+                                            </Card>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Private Library - Medium Selection */}
+                        {privateCurriculum && !privateMedium && (
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Select Medium</Text>
+                                <View style={styles.grid}>
+                                    {(curriculums.find(c => c.id === privateCurriculum)?.media || []).map(medium => (
+                                        <TouchableOpacity key={medium.id} onPress={() => setPrivateMedium(medium.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                            <Card gradient={medium.gradient} padding="md">
+                                                <View style={styles.gradientCardContent}>
+                                                    <View style={styles.cardHeader}>
+                                                        <View style={styles.iconContainer}>
+                                                            <Ionicons name="language" size={24} color="#FFFFFF" />
+                                                        </View>
+                                                        <Text style={styles.cardCount}>{medium.bookCount}</Text>
+                                                    </View>
+                                                    <Text style={styles.cardTitle}>{medium.label}</Text>
+                                                    <Text style={styles.cardSubtitle}>{medium.bookCount} books available</Text>
+                                                </View>
+                                            </Card>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Private Library - Class Selection */}
+                        {privateMedium && !privateClass && (
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Select Class</Text>
+                                <View style={styles.grid}>
+                                    {privateCurrentClasses.map(classItem => (
+                                        <TouchableOpacity key={classItem.id} onPress={() => setPrivateClass(classItem.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                            <Card gradient={classItem.gradient} padding="md">
+                                                <View style={styles.gradientCardContent}>
+                                                    <View style={styles.cardHeader}>
+                                                        <View style={styles.iconContainer}>
+                                                            <Ionicons name="library" size={24} color="#FFFFFF" />
+                                                        </View>
+                                                        <Text style={styles.cardCount}>{classItem.bookCount}</Text>
+                                                    </View>
+                                                    <Text style={styles.cardTitle}>{classItem.label}</Text>
+                                                    <Text style={styles.cardSubtitle}>{classItem.bookCount} books available</Text>
+                                                </View>
+                                            </Card>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Private Library - Subject Selection */}
+                        {privateClass && !privateSubject && (
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Select Subject</Text>
+                                <View style={styles.grid}>
+                                    {(privateCurrentSubjects || []).map(subject => (
+                                        <TouchableOpacity key={subject.id} onPress={() => setPrivateSubject(subject.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                            <Card gradient={subject.gradient} padding="md">
+                                                <View style={styles.gradientCardContent}>
+                                                    <View style={styles.cardHeader}>
+                                                        <View style={styles.iconContainer}>
+                                                            <Ionicons name="book" size={24} color="#FFFFFF" />
+                                                        </View>
+                                                        <Text style={styles.cardCount}>{subject.chapterCount}</Text>
+                                                    </View>
+                                                    <Text style={styles.cardTitle}>{subject.label}</Text>
+                                                    <Text style={styles.cardSubtitle}>{subject.chapterCount} chapters</Text>
+                                                </View>
+                                            </Card>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Private Library - Chapter List with Search */}
+                        {privateSubject && (
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Chapters</Text>
+                                
+                                <View style={styles.chapterList}>
+                                    {filteredPrivateChapters.map(chapter => (
+                                        <Card key={chapter.id} style={styles.chapterCard}>
+                                            <View style={styles.chapterItemContent}>
+                                                <View style={styles.chapterIconWrapper}>
+                                                    <LinearGradient
+                                                        colors={['#43e97b', '#38f9d7']}
+                                                        style={styles.chapterIconGradient}
+                                                        start={{ x: 0, y: 0 }}
+                                                        end={{ x: 1, y: 1 }}
+                                                    >
+                                                        <Ionicons name="folder" size={24} color="#FFFFFF" />
+                                                    </LinearGradient>
+                                                </View>
+                                                <View style={styles.chapterInfo}>
+                                                    <Text style={styles.chapterTitleText}>{chapter.title}</Text>
+                                                    <Text style={styles.chapterCountText}>{chapter.pdfCount} PDFs available</Text>
+                                                </View>
+                                                <View style={styles.chapterActions}>
+                                                    <TouchableOpacity style={styles.pdfActionButton}>
+                                                        <Ionicons name="eye" size={20} color="#667eea" />
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity style={styles.pdfActionButton}>
+                                                        <Ionicons name="download" size={20} color="#43e97b" />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            </View>
+                                        </Card>
+                                    ))}
+                                </View>
+
+                                {filteredPrivateChapters.length === 0 && privateSearchQuery && (
+                                    <View style={styles.noResultsContainer}>
+                                        <LinearGradient
+                                            colors={['#f093fb', '#f5576c']}
+                                            style={styles.noResultsIconContainer}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                        >
+                                            <Ionicons name="search" size={32} color="#FFFFFF" />
+                                        </LinearGradient>
+                                        <Text style={styles.noResultsText}>
+                                            No chapters found for "{privateSearchQuery}"
+                                        </Text>
+                                        <Text style={styles.noResultsSubText}>
+                                            Try searching with different keywords
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        )}
+                    </>
+                )}
+            </ScrollView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#F8F9FA',
+        // paddingHorizontal: width * 0.04,
         paddingTop: 16,
+    },
+
+    // Gradient Button Styles
+    gradientButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     // Button Styles
@@ -1100,21 +1040,21 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
+        overflow: 'hidden',
     },
     buttonPrimary: {
-        backgroundColor: '#10b981',
+        backgroundColor: 'transparent',
     },
     buttonSecondary: {
         backgroundColor: '#e5e7eb',
     },
     buttonOutline: {
         borderWidth: 2,
-        borderColor: '#10b981',
+        borderColor: '#667eea',
         backgroundColor: 'transparent',
     },
     buttonSm: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+        borderRadius: 8,
     },
     buttonMd: {
         paddingHorizontal: 16,
@@ -1128,7 +1068,7 @@ const styles = StyleSheet.create({
         opacity: 0.5,
     },
     buttonTextBase: {
-        fontWeight: '500',
+        fontWeight: '600',
     },
     buttonTextPrimary: {
         color: '#ffffff',
@@ -1137,7 +1077,7 @@ const styles = StyleSheet.create({
         color: '#374151',
     },
     buttonTextOutline: {
-        color: '#10b981',
+        color: '#667eea',
     },
     buttonTextSm: {
         fontSize: 14,
@@ -1151,89 +1091,121 @@ const styles = StyleSheet.create({
 
     // Card Styles
     cardBase: {
-        backgroundColor: '#ffffff',
-        borderRadius: 12,
+        borderRadius: 16,
+        overflow: 'hidden',
+        elevation: 1,
         shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 0.5,
-        borderWidth: 1,
-        borderColor: '#f3f4f6',
+        shadowRadius: 4,
+    },
+    gradientCard: {
+        borderRadius: 16,
     },
     cardPaddingSm: {
         padding: 12,
     },
     cardPaddingMd: {
-        padding: 16,
+        padding: width * 0.04,
     },
     cardPaddingLg: {
         padding: 24,
     },
 
+    // Gradient Card Content
+    gradientCardContent: {
+        flex: 1,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: height * 0.01,
+    },
+    iconContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        padding: 8,
+        borderRadius: 12,
+    },
+    cardCount: {
+        fontSize: width * 0.08,
+        fontWeight: '800',
+        color: '#FFFFFF',
+    },
+    cardTitle: {
+        fontSize: width * 0.035,
+        fontWeight: '600',
+        color: '#FFFFFF',
+        marginBottom: 2,
+    },
+    cardSubtitle: {
+        fontSize: width * 0.03,
+        color: 'rgba(255, 255, 255, 0.8)',
+    },
+
     // Section Toggle
     sectionToggle: {
         flexDirection: 'row',
-        backgroundColor: '#f3f4f6',
-        borderRadius: 8,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
         padding: 4,
-        marginBottom: 16,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     toggleButton: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 8,
+        paddingVertical: 12,
         paddingHorizontal: 16,
-        borderRadius: 6,
+        borderRadius: 8,
     },
     toggleButtonActive: {
-        backgroundColor: '#ffffff',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
+        backgroundColor: '#F0F4FF',
     },
     toggleButtonText: {
         fontSize: 14,
-        fontWeight: '500',
+        fontWeight: '600',
         marginLeft: 8,
-        color: '#6b7280',
+        color: '#9ca3af',
     },
     toggleButtonTextActive: {
-        color: '#10b981',
+        color: '#667eea',
     },
 
     // Navigation
     navigationHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 8,
-        marginBottom: 6,
+        paddingVertical: 12,
+        marginBottom: 16,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
     },
     backButton: {
         padding: 8,
         marginRight: 12,
+        borderRadius: 8,
+        backgroundColor: '#F0F4FF',
     },
     breadcrumbContainer: {
         flex: 1,
     },
-    breadcrumbLabel: {
-        fontSize: 12,
-        color: '#6b7280',
-    },
     breadcrumbText: {
-        fontSize: 14,
-        fontWeight: '400',
-        color: 'black'
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#2C3E50',
     },
     breadcrumbTextContainer: {
         flexDirection: 'row',
@@ -1242,13 +1214,14 @@ const styles = StyleSheet.create({
     },
     breadcrumbSeparator: {
         fontSize: 16,
-        color: '#6b7280',
-        marginHorizontal: 4,
+        color: '#667eea',
+        marginHorizontal: 8,
+        fontWeight: '600',
     },
 
     // Section
     section: {
-        marginBottom: 16,
+        marginBottom: 24,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -1257,86 +1230,55 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: width * 0.03
+        fontSize: width * 0.05,
+        fontWeight: '700',
+        color: '#2C3E50',
     },
 
     // Grid
     grid: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: width * 0.015,
     },
     gridItem: {
         width: (width - 44) / 2,
-        marginHorizontal: 3,
-        marginBottom: 12,
-    },
-
-    // Class Item
-    classItem: {
-        flex: 1,
-    },
-    classItemHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    itemIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 8,
-        marginRight: 12,
-        backgroundColor: '#f3f4f6',
-    },
-    classInfo: {
-        flex: 1,
-    },
-    classLabel: {
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    classCount: {
-        fontSize: 12,
-        color: '#6b7280',
-    },
-    classFooter: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    classFooterText: {
-        fontSize: 12,
-        color: '#9ca3af',
     },
 
     // Chapter List
     chapterList: {
         gap: 12,
     },
-    chapterItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+    chapterCard: {
+        backgroundColor: '#FFFFFF',
     },
-    chapterItemHeader: {
+    chapterItemContent: {
         flexDirection: 'row',
         alignItems: 'center',
+        padding: 16,
+    },
+    chapterIconWrapper: {
+        marginRight: 16,
+    },
+    chapterIconGradient: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    chapterInfo: {
         flex: 1,
     },
-    chapterItemIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 8,
-        marginRight: 12,
-        backgroundColor: '#f3f4f6',
-    },
-    chapterTitle: {
+    chapterTitleText: {
         fontSize: 16,
         fontWeight: '600',
+        color: '#2C3E50',
+        marginBottom: 4,
     },
-    chapterCount: {
-        fontSize: 12,
-        color: '#6b7280',
+    chapterCountText: {
+        fontSize: 14,
+        color: '#7F8C8D',
     },
     chapterActions: {
         flexDirection: 'row',
@@ -1347,28 +1289,36 @@ const styles = StyleSheet.create({
     pdfList: {
         gap: 12,
     },
-    pdfItem: {
+    pdfCard: {
+        backgroundColor: '#FFFFFF',
+    },
+    pdfItemContent: {
         flexDirection: 'row',
         alignItems: 'center',
+        padding: 16,
     },
-    pdfItemIcon: {
+    pdfIconWrapper: {
+        marginRight: 16,
+    },
+    pdfIconGradient: {
         width: 48,
         height: 48,
-        borderRadius: 8,
-        marginRight: 16,
-        backgroundColor: '#f3f4f6',
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     pdfInfo: {
         flex: 1,
     },
     pdfTitle: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: '600',
+        color: '#2C3E50',
         marginBottom: 4,
     },
     pdfFileName: {
         fontSize: 12,
-        color: '#6b7280',
+        color: '#7F8C8D',
         marginBottom: 8,
     },
     pdfMeta: {
@@ -1380,103 +1330,64 @@ const styles = StyleSheet.create({
         color: '#9ca3af',
     },
     pdfActions: {
-        flexDirection: 'column',
-        gap: 8,
+        flexDirection: 'row',
+        gap: 12,
     },
     pdfActionButton: {
         padding: 8,
+        borderRadius: 8,
+        backgroundColor: '#F8F9FA',
     },
 
     // Search
     searchContainer: {
         position: 'relative',
         marginBottom: 16,
-        borderWidth: 1,
-        borderColor: "#374151",
-        borderRadius: 8,
     },
     searchInput: {
-        paddingLeft: 40,
+        backgroundColor: '#FFFFFF',
+        paddingLeft: 48,
         paddingRight: 16,
-        paddingVertical: 12,
-        borderRadius: 8,
+        paddingVertical: 16,
+        borderRadius: 12,
         fontSize: 16,
+        color: '#2C3E50',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
     },
     searchIcon: {
         position: 'absolute',
-        left: 12,
-        top: 12,
+        left: 16,
+        top: 16,
     },
 
     // No Results
     noResultsContainer: {
         alignItems: 'center',
-        paddingVertical: 40,
+        paddingVertical: 48,
+    },
+    noResultsIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
     },
     noResultsText: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#6b7280',
-        marginTop: 16,
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#2C3E50',
+        marginBottom: 8,
         textAlign: 'center',
     },
     noResultsSubText: {
         fontSize: 14,
-        color: '#9ca3af',
-        marginTop: 8,
+        color: '#7F8C8D',
         textAlign: 'center',
-    },
-
-    // Book List (for public library)
-    bookList: {
-        gap: 12,
-    },
-    bookItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    bookThumbnail: {
-        width: 64,
-        height: 80,
-        borderRadius: 8,
-        marginRight: 16,
-    },
-    bookInfo: {
-        flex: 1,
-    },
-    bookTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 4,
-    },
-    bookAuthor: {
-        fontSize: 12,
-        color: '#6b7280',
-        marginBottom: 4,
-    },
-    bookGrade: {
-        fontSize: 12,
-        color: '#9ca3af',
-        marginBottom: 8,
-    },
-    bookMeta: {
-        flexDirection: 'row',
-        gap: 16,
-    },
-    bookMetaText: {
-        fontSize: 12,
-        color: '#9ca3af',
-    },
-    bookActions: {
-        alignItems: 'center',
-        gap: 8,
-    },
-    downloadButton: {
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-    },
-    favoriteButton: {
-        padding: 4,
     },
 });
 
