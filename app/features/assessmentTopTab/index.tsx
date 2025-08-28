@@ -127,7 +127,7 @@ const Assessment: React.FC = () => {
     const navigation = useNavigation<Navigation>();
 
     // Set to true to show empty state, false to show data
-    const [hasData, setHasData] = useState(false);
+    const [hasData, setHasData] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState('All');
 
     const currentData = hasData ? assessmentData : emptyAssessmentData;
@@ -213,9 +213,9 @@ const Assessment: React.FC = () => {
                     <TouchableOpacity style={styles.viewResultsButton}>
                         <Text style={styles.viewResultsText}>View Results</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.editButton}>
+                    {/* <TouchableOpacity style={styles.editButton}>
                         <Text style={styles.editButtonText}>Edit</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                 </View>
             )}
         </View>

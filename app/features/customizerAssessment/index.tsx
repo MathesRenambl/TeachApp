@@ -845,7 +845,7 @@ const CustomizerAssessment: React.FC = () => {
 
 
     useEffect(()=>{
-        const chapterNumbers = (selectedChapters.map(chapter => (chapter.replace('Chapter ', ''))));
+        const chapterNumbers = (selectedChapters.map(chapter =>  (chapter.replace('Chapter ', ''))));
         const selectedContent={
             curriculum:selectedCurriculum,
             standard:selectedStandard,
