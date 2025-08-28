@@ -1,12 +1,16 @@
 export type RootStackParamList = {
-  TeacherApp: undefined;
-  MatchTheFollowing : undefined;
-  TestCustomizer: undefined;
-  ExamApp: undefined;
-  Assessment: undefined;
-  Library:undefined;
-  CustomizerAssessment : undefined;
-  Home : undefined;
+    // Auth Screens
+    Login: undefined;
+    SignUp: undefined;
+    
+    TeacherApp: undefined;
+    MatchTheFollowing : undefined;
+    TestCustomizer: undefined;
+    ExamApp: undefined;
+    Assessment: undefined;
+    Library:undefined;
+    CustomizerAssessment : undefined;
+    Home : undefined;
 };
 
 // File types
