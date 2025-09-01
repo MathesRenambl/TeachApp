@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Dimensions } from 'react-native';
-import { MaterialIcons as Icon } from '@expo/vector-icons';
+import { ScrollView, StyleSheet, StatusBar, Dimensions, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types';
 
-// Import components
-import Upload from '../uploadTopTab/index';
+// Import separated components
+import ProfileHeader from '../home/components/profileHeader';
+import TabNavigation, { TabType } from '../home/components/tabNavigation';
+import Dashboard from '../uploadTopTab/index'
+
+// Import existing tab components
+// import Upload from '../uploadTopTab/index';
 import Library from '../libraryTopTab';
 import Assessment from '../assessmentTopTab/index';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -31,8 +36,46 @@ interface UploadedFile {
 
 const TeacherApp: React.FC = () => {
     const navigation = useNavigation<Navigation>();
-    const [activeTab, setActiveTab] = useState<'upload' | 'library' | 'assessment'>('upload');
+    const [activeTab, setActiveTab] = useState<TabType>('upload');
     const [libraryFiles, setLibraryFiles] = useState<UploadedFile[]>([]);
+
+    // Mock data for statistics
+    const dashboardStats = {
+        totalPDFs: 127,
+        activeAssessments: 8,
+        totalStudents: 20,
+        recentUploads: 15
+    };
+
+    // Mock data for recent activitiess
+    const recentActivities = [
+        {
+            id: '1',
+            title: 'Mathematics Chapter 5 uploaded',
+            time: '2 hours ago',
+            icon: 'upload-file',
+            color: '#667eea'
+        },
+        {
+            id: '2',
+            title: 'Science Quiz assigned to Class 8A',
+            time: '5 hours ago',
+            icon: 'assignment',
+            color: '#f093fb'
+        },
+        {
+            id: '3',
+            title: '12 new students joined',
+            time: '1 day ago',
+            icon: 'people',
+            color: '#43e97b'
+        }
+    ];
+
+    // Handle tab change
+    const handleTabPress = (tab: TabType) => {
+        setActiveTab(tab);
+    };
 
     // Handle files processed from Upload component
     const handleFilesProcessed = (files: UploadedFile[]) => {
@@ -50,88 +93,72 @@ const TeacherApp: React.FC = () => {
         // Add your file selection logic here
     };
 
+    // Handle notification press
+    const handleNotificationPress = () => {
+        console.log('Notifications pressed');
+        // Add notification navigation logic here
+    };
+
+    // Dashboard handlers
+    const handleLibraryPress = () => setActiveTab('library');
+    const handleAssessmentPress = () => setActiveTab('assessment');
+    const handleUploadPress = () => setActiveTab('upload');
+    const handleAnalyticsPress = () => {
+        console.log('Analytics pressed');
+        // Add analytics navigation logic here
+    };
+
+    // Render tab content
     const renderTabContent = () => {
         switch (activeTab) {
             case 'upload':
-                return <Upload />;
+                return (
+                    <>
+                        <Dashboard
+                            stats={dashboardStats}
+                            onLibraryPress={handleLibraryPress}
+                            onAssessmentPress={handleAssessmentPress}
+                            onUploadPress={handleUploadPress}
+                            onAnalyticsPress={handleAnalyticsPress}
+                            recentActivities={recentActivities}
+                        />
+                        {/* <Upload onFilesProcessed={handleFilesProcessed} /> */}
+                    </>
+                );
             case 'library':
-                return <Library />;
+                return <Library files={libraryFiles} onFileSelect={handleFileSelect} />;
             case 'assessment':
                 return <Assessment />;
             default:
-                return <Upload />;
+                return (
+                    <Dashboard
+                        stats={dashboardStats}
+                        onLibraryPress={handleLibraryPress}
+                        onAssessmentPress={handleAssessmentPress}
+                        onUploadPress={handleUploadPress}
+                        onAnalyticsPress={handleAnalyticsPress}
+                        recentActivities={recentActivities}
+                    />
+                );
         }
     };
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
             
-            {/* Header */}
-            <View style={styles.header}>
-                <View style={styles.headerContent}>
-                    <View style={styles.headerLeft}>
-                        <View style={styles.profileIcon}>
-                            <Icon name="person" size={24} color="#4A90E2" />
-                        </View>
-                        <View>
-                            <Text style={styles.welcomeText}>Welcome back,</Text>
-                            <Text style={styles.teacherName}>Gokul Thirumal</Text>
-                        </View>
-                    </View>
-                </View>
-            </View>
+            {/* Profile Header */}
+            <ProfileHeader
+                teacherName="Gokul Thirumal"
+                notificationCount={0}
+                onNotificationPress={handleNotificationPress}
+            />
 
             {/* Tab Navigation */}
-            <View style={styles.tabNavigation}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'upload' && styles.activeTab]}
-                    onPress={() => setActiveTab('upload')}
-                >
-                    <Icon
-                        name="cloud-upload"
-                        size={20}
-                        color={activeTab === 'upload' ? '#4A90E2' : '#95A5A6'}
-                    />
-                    <Text
-                        style={[styles.tabText, activeTab === 'upload' && styles.activeTabText]}
-                    >
-                        Upload
-                    </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'library' && styles.activeTab]}
-                    onPress={() => setActiveTab('library')}
-                >
-                    <Icon
-                        name="library-books"
-                        size={20}
-                        color={activeTab === 'library' ? '#4A90E2' : '#95A5A6'}
-                    />
-                    <Text
-                        style={[styles.tabText, activeTab === 'library' && styles.activeTabText]}
-                    >
-                        Library
-                    </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'assessment' && styles.activeTab]}
-                    onPress={() => setActiveTab('assessment')}
-                >
-                    <Icon
-                        name="assessment"
-                        size={20}
-                        color={activeTab === 'assessment' ? '#4A90E2' : '#95A5A6'}
-                    />
-                    <Text
-                        style={[styles.tabText, activeTab === 'assessment' && styles.activeTabText]}
-                    >
-                        Assessment
-                    </Text>
-                </TouchableOpacity>
-            </View>
+            <TabNavigation
+                activeTab={activeTab}
+                onTabPress={handleTabPress}
+            />
 
             {/* Main Content with Global ScrollView */}
             <ScrollView 
@@ -153,84 +180,16 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F8F9FA',
     },
-    header: {
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: width * 0.05,
-        paddingVertical: height * 0.02,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E9ECEF',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 5,
-    },
-    headerContent: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    profileIcon: {
-        width: width * 0.12,
-        height: width * 0.12,
-        borderRadius: width * 0.06,
-        backgroundColor: '#E3F2FD',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: width * 0.03,
-    },
-    welcomeText: {
-        fontSize: width * 0.035,
-        color: '#7F8C8D',
-    },
-    teacherName: {
-        fontSize: width * 0.045,
-        fontWeight: '700',
-        color: '#2C3E50',
-    },
-    tabNavigation: {
-        flexDirection: 'row',
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: width * 0.05,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E9ECEF',
-    },
-    tab: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: height * 0.02,
-        borderBottomWidth: 3,
-        borderBottomColor: 'transparent',
-    },
-    activeTab: {
-        borderBottomColor: '#4A90E2',
-    },
-    tabText: {
-        fontSize: width * 0.035,
-        color: '#95A5A6',
-        marginLeft: width * 0.02,
-        fontWeight: '500',
-    },
-    activeTabText: {
-        color: '#4A90E2',
-        fontWeight: '600',
-    },
     contentContainer: {
         flex: 1,
         backgroundColor: '#F8F9FA',
     },
     scrollContent: {
-        paddingBottom: height * 0.05,
+        // paddingBottom: height * 0.05,
     },
     tabContent: {
         flex: 1,
-        padding: width * 0.05,
+        paddingHorizontal: width * 0.04,
     },
 });
 
