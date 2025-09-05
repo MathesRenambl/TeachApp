@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import UploadComponent from '../uploadTopTab/components/upload';
@@ -98,13 +98,6 @@ interface UploadedFile {
     progress?: number;
 }
 
-interface ClassData {
-    id: string;
-    className: string;
-    section: string;
-    studentCount: number;
-}
-
 interface DashboardProps {
     stats?: Stats;
     onLibraryPress?: () => void;
@@ -157,6 +150,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
     // Handle file upload completion
     const handleFilesUploaded = (uploadedFiles: UploadedFile[]) => {
+        // Update stats
         const pdfCount = uploadedFiles.filter(file => file.type === 'pdf').length;
         const imageCount = uploadedFiles.filter(file => file.type === 'image').length;
         
@@ -166,6 +160,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             recentUploads: prev.recentUploads + uploadedFiles.length
         }));
 
+        // Add new activities
         const newActivities = uploadedFiles.map(file => ({
             id: `upload_${file.id}`,
             title: `${file.name} uploaded successfully`,
@@ -176,6 +171,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         setCurrentActivities(prev => [...newActivities, ...prev.slice(0, 2)]);
 
+        // Call parent callback
         onFilesUploaded?.(uploadedFiles);
     };
 
@@ -234,33 +230,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </View>
             </View>
 
-            {/* Students Modal */}
-            <Modal
-                visible={showStudentsModal}
-                animationType="slide"
-                onRequestClose={() => setShowStudentsModal(false)}
-            >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Student Classes</Text>
-                        <TouchableOpacity onPress={() => setShowStudentsModal(false)}>
-                            <Icon name="close" size={24} color="#2C3E50" />
-                        </TouchableOpacity>
-                    </View>
-                    <View style={styles.tableHeader}>
-                        <Text style={[styles.tableHeaderText, { flex: 1 }]}>Class</Text>
-                        <Text style={[styles.tableHeaderText, { flex: 1 }]}>Section</Text>
-                        <Text style={[styles.tableHeaderText, { flex: 1 }]}>Students</Text>
-                    </View>
-                    <FlatList
-                        data={classData}
-                        renderItem={renderClassItem}
-                        keyExtractor={item => item.id}
-                        style={styles.flatList}
-                    />
-                </View>
-            </Modal>
-
             {/* Upload Component */}
             <UploadComponent
                 onFilesUploaded={handleFilesUploaded}
@@ -315,7 +284,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 index === currentActivities.length - 1 && styles.lastActivityItem
                             ]}
                         >
-                            <View style={[styles.activityIcon, { backgroundColor: `${activity.color}15` }]}>
+                            <View style={[
+                                styles.activityIcon, 
+                                { backgroundColor: `${activity.color}15` }
+                            ]}>
                                 <Icon name={activity.icon as any} size={20} color={activity.color} />
                             </View>
                             <View style={styles.activityContent}>
@@ -399,6 +371,8 @@ const styles = StyleSheet.create({
         fontSize: width * 0.03,
         color: 'rgba(255, 255, 255, 0.8)',
     },
+
+    // Quick Actions
     quickActionsSection: {
         marginBottom: height * 0.02,
     },
@@ -438,6 +412,8 @@ const styles = StyleSheet.create({
         fontSize: width * 0.032,
         color: '#7F8C8D',
     },
+
+    // Activity Section
     activitySection: {
         marginBottom: height * 0.02,
     },
@@ -481,63 +457,6 @@ const styles = StyleSheet.create({
     activityTime: {
         fontSize: width * 0.03,
         color: '#7F8C8D',
-    },
-    modalContainer: {
-        flex: 1,
-        backgroundColor: '#F5F6FA',
-        padding: width * 0.05,
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: height * 0.02,
-    },
-    modalTitle: {
-        fontSize: width * 0.05,
-        fontWeight: '700',
-        color: '#2C3E50',
-    },
-    tableHeader: {
-        flexDirection: 'row',
-        backgroundColor: '#FFFFFF',
-        paddingVertical: height * 0.015,
-        paddingHorizontal: width * 0.03,
-        borderRadius: 8,
-        marginBottom: height * 0.01,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    tableHeaderText: {
-        fontSize: width * 0.04,
-        fontWeight: '600',
-        color: '#2C3E50',
-        textAlign: 'center',
-    },
-    classItem: {
-        flexDirection: 'row',
-        backgroundColor: '#FFFFFF',
-        paddingVertical: height * 0.015,
-        paddingHorizontal: width * 0.03,
-        borderRadius: 8,
-        marginBottom: height * 0.01,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    classText: {
-        flex: 1,
-        fontSize: width * 0.035,
-        color: '#2C3E50',
-        textAlign: 'center',
-    },
-    flatList: {
-        flex: 1,
     },
 });
 
