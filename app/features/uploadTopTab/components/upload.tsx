@@ -1,17 +1,5 @@
 import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
-    Dimensions,
-    Alert,
-    Modal,
-    ActivityIndicator,
-    FlatList,
-    Image,
-    ScrollView
-} from 'react-native';
+import {View,Text,TouchableOpacity,StyleSheet,Dimensions,Alert,Modal,ActivityIndicator,FlatList,Image,ScrollView} from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
@@ -34,12 +22,14 @@ interface UploadComponentProps {
     onFilesUploaded?: (files: UploadedFile[]) => void;
     onUploadStart?: () => void;
     onUploadComplete?: (files: UploadedFile[]) => void;
+    onFileUrlReceived: (url: string) => void;
 }
 
 const UploadComponent: React.FC<UploadComponentProps> = ({
     onFilesUploaded,
     onUploadStart,
-    onUploadComplete
+    onUploadComplete,
+    onFileUrlReceived,
 }) => {
     const [uploadModalVisible, setUploadModalVisible] = useState(false);
     const [uploadingFiles, setUploadingFiles] = useState<UploadedFile[]>([]);
@@ -75,6 +65,9 @@ const UploadComponent: React.FC<UploadComponentProps> = ({
                         progress: 100,
                         uploadDate: new Date().toISOString()
                     };
+                    // Simulate receiving a URL after upload
+                    const mockUrl = `https://example.com/uploads/${completedFile.name}`;
+                    onFileUrlReceived(mockUrl);
                     resolve(completedFile);
                 } else {
                     setUploadingFiles(prev =>
@@ -230,7 +223,7 @@ const UploadComponent: React.FC<UploadComponentProps> = ({
                     <Icon 
                         name={item.type === 'pdf' ? 'picture-as-pdf' : 'image'} 
                         size={24} 
-                        color={item.type === 'pdf' ? '#FF6B6B' : '#4ECDC4'} 
+                        color={item.type === 'pdf' ? '#FF6B6B' : '#4ECDC4'}
                     />
                 </View>
                 <View style={styles.fileInfo}>
@@ -247,8 +240,7 @@ const UploadComponent: React.FC<UploadComponentProps> = ({
             <ActivityIndicator size="small" color="#667eea" />
         </View>
     );
-
-    return (
+        return (
         <View style={styles.container}>
             {/* Upload Button */}
             <TouchableOpacity
@@ -299,7 +291,6 @@ const UploadComponent: React.FC<UploadComponentProps> = ({
                                 <Icon name="close" size={24} color="#7F8C8D" />
                             </TouchableOpacity>
                         </View>
-
                         <ScrollView style={styles.optionsContainer}>
                             {/* PDF Upload */}
                             <TouchableOpacity style={styles.optionCard} onPress={handlePDFUpload}>
@@ -316,74 +307,9 @@ const UploadComponent: React.FC<UploadComponentProps> = ({
                                             Select PDF documents from your device
                                         </Text>
                                     </View>
-                                    <Icon name="arrow-forward-ios" size={16} color="#BDC3C7" />
-                                </LinearGradient>
-                            </TouchableOpacity>
-
-                            {/* Image Gallery Upload */}
-                            <TouchableOpacity style={styles.optionCard} onPress={handleImageUpload}>
-                                <LinearGradient
-                                    colors={['#4ECDC415', '#4ECDC405']}
-                                    style={styles.optionGradient}
-                                >
-                                    <View style={styles.optionIcon}>
-                                        <Icon name="photo-library" size={32} color="#4ECDC4" />
-                                    </View>
-                                    <View style={styles.optionContent}>
-                                        <Text style={styles.optionTitle}>Photo Gallery</Text>
-                                        <Text style={styles.optionDescription}>
-                                            Choose images from your gallery
-                                        </Text>
-                                    </View>
-                                    <Icon name="arrow-forward-ios" size={16} color="#BDC3C7" />
-                                </LinearGradient>
-                            </TouchableOpacity>
-
-                            {/* Camera Capture */}
-                            <TouchableOpacity style={styles.optionCard} onPress={handleCameraCapture}>
-                                <LinearGradient
-                                    colors={['#45B7D115', '#45B7D105']}
-                                    style={styles.optionGradient}
-                                >
-                                    <View style={styles.optionIcon}>
-                                        <Icon name="camera-alt" size={32} color="#45B7D1" />
-                                    </View>
-                                    <View style={styles.optionContent}>
-                                        <Text style={styles.optionTitle}>Take Photo</Text>
-                                        <Text style={styles.optionDescription}>
-                                            Capture image using camera
-                                        </Text>
-                                    </View>
-                                    <Icon name="arrow-forward-ios" size={16} color="#BDC3C7" />
                                 </LinearGradient>
                             </TouchableOpacity>
                         </ScrollView>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* Success Modal */}
-            <Modal
-                visible={showSuccessModal}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setShowSuccessModal(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.successModalContent}>
-                        <View style={styles.successIcon}>
-                            <Icon name="check-circle" size={64} color="#4CAF50" />
-                        </View>
-                        <Text style={styles.successTitle}>Upload Successful!</Text>
-                        <Text style={styles.successMessage}>
-                            Your files have been uploaded successfully and are now available in your library.
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.successButton}
-                            onPress={() => setShowSuccessModal(false)}
-                        >
-                            <Text style={styles.successButtonText}>Great!</Text>
-                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
@@ -393,62 +319,58 @@ const UploadComponent: React.FC<UploadComponentProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: height * 0.02,
+        flex: 1,
+        backgroundColor: '#F8F9FA',
     },
     uploadButton: {
         borderRadius: 16,
-        overflow: 'hidden',
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        marginBottom: height * 0.02,
+        margin: width * 0.05,
+        shadowColor: '#667eea',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 15,
+        elevation: 10,
     },
     uploadButtonGradient: {
-        padding: width * 0.06,
+        paddingVertical: height * 0.03,
+        paddingHorizontal: width * 0.06,
+        borderRadius: 16,
         alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: height * 0.15,
     },
     uploadButtonText: {
-        fontSize: width * 0.045,
+        fontSize: width * 0.05,
         fontWeight: '700',
         color: '#FFFFFF',
-        marginTop: height * 0.01,
+        marginTop: 8,
     },
     uploadButtonSubtext: {
-        fontSize: width * 0.032,
-        color: 'rgba(255, 255, 255, 0.8)',
-        marginTop: height * 0.005,
+        fontSize: width * 0.035,
+        color: '#FFFFFF',
+        opacity: 0.8,
+        marginTop: 4,
     },
-
-    // Uploading Section
     uploadingSection: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        padding: width * 0.04,
-        marginBottom: height * 0.02,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
+        marginHorizontal: width * 0.05,
+        marginTop: height * 0.02,
     },
     sectionTitle: {
-        fontSize: width * 0.04,
+        fontSize: width * 0.045,
         fontWeight: '600',
-        color: '#2C3E50',
-        marginBottom: height * 0.015,
+        color: '#34495E',
+        marginBottom: 12,
     },
     uploadItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: height * 0.01,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F8F9FA',
-        marginBottom: height * 0.01,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     uploadItemLeft: {
         flexDirection: 'row',
@@ -456,55 +378,53 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     fileIcon: {
-        width: width * 0.12,
-        height: width * 0.12,
-        borderRadius: width * 0.06,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: width * 0.03,
+        marginRight: 12,
     },
     fileInfo: {
         flex: 1,
+        marginRight: 12,
     },
     fileName: {
-        fontSize: width * 0.035,
+        fontSize: 16,
         fontWeight: '500',
         color: '#2C3E50',
-        marginBottom: 2,
     },
     fileSize: {
-        fontSize: width * 0.03,
+        fontSize: 12,
         color: '#7F8C8D',
-        marginBottom: height * 0.005,
+        marginTop: 2,
     },
     progressContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: width * 0.02,
+        marginTop: 6,
     },
     progressBar: {
         flex: 1,
-        height: 4,
-        backgroundColor: '#E9ECEF',
-        borderRadius: 2,
+        height: 6,
+        backgroundColor: '#ECF0F1',
+        borderRadius: 3,
         overflow: 'hidden',
     },
     progressFill: {
         height: '100%',
         backgroundColor: '#667eea',
-        borderRadius: 2,
+        borderRadius: 3,
     },
     progressText: {
-        fontSize: width * 0.028,
-        color: '#7F8C8D',
-        width: width * 0.08,
-        textAlign: 'right',
+        fontSize: 12,
+        color: '#2C3E50',
+        marginLeft: 8,
+        fontWeight: '600',
     },
-
-    // Modal Styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -514,6 +434,11 @@ const styles = StyleSheet.create({
         width: width * 0.9,
         maxHeight: height * 0.8,
         overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 20,
     },
     modalHeader: {
         flexDirection: 'row',
@@ -521,32 +446,33 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: width * 0.05,
         borderBottomWidth: 1,
-        borderBottomColor: '#E9ECEF',
+        borderBottomColor: '#ECF0F1',
     },
     modalTitle: {
-        fontSize: width * 0.045,
+        fontSize: width * 0.05,
         fontWeight: '700',
         color: '#2C3E50',
     },
     closeButton: {
-        padding: width * 0.02,
+        padding: 8,
     },
     optionsContainer: {
-        padding: width * 0.05,
+        padding: width * 0.02,
     },
     optionCard: {
-        marginBottom: height * 0.015,
         borderRadius: 12,
-        overflow: 'hidden',
-        elevation: 2,
+        margin: width * 0.03,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 5,
+        elevation: 3,
+        backgroundColor: '#FFFFFF', // Required for elevation shadow on Android
     },
     optionGradient: {
         flexDirection: 'row',
         alignItems: 'center',
+        borderRadius: 12,
         padding: width * 0.04,
     },
     optionIcon: {
@@ -569,8 +495,6 @@ const styles = StyleSheet.create({
         fontSize: width * 0.032,
         color: '#7F8C8D',
     },
-
-    // Success Modal
     successModalContent: {
         backgroundColor: '#FFFFFF',
         borderRadius: 20,
@@ -592,19 +516,18 @@ const styles = StyleSheet.create({
         fontSize: width * 0.035,
         color: '#7F8C8D',
         textAlign: 'center',
-        lineHeight: width * 0.05,
         marginBottom: height * 0.03,
     },
     successButton: {
-        backgroundColor: '#4CAF50',
-        borderRadius: 25,
-        paddingHorizontal: width * 0.1,
-        paddingVertical: height * 0.015,
+        backgroundColor: '#667eea',
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 30,
     },
     successButtonText: {
         fontSize: width * 0.04,
-        fontWeight: '600',
         color: '#FFFFFF',
+        fontWeight: '600',
     },
 });
 

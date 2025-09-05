@@ -1,5 +1,5 @@
 // app/features/auth/Login.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,6 +8,10 @@ import { NavigationProp, useNavigation } from '@react-navigation/native';
 interface LoginProps {
     navigation: NavigationProp<any>;
 }
+interface LoginResponse {
+    message: string;
+    teacherId: number;
+}
 
 const Login: React.FC<LoginProps> = () => {
     const navigation = useNavigation<NavigationProp<any>>();
@@ -15,59 +19,99 @@ const Login: React.FC<LoginProps> = () => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const API_URL = "http://192.168.1.38:3000";
+
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     };
 
-    const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert('Error', 'Please fill in all fields');
-            return;
+    const validateForm = () => {
+        if (!validateEmail(email)) {
+            Alert.alert('Error', 'Please enter a valid email');
+            return false;
         }
 
-        if (!validateEmail(email)) {
-            Alert.alert('Error', 'Please enter a valid email address');
+        if (!password) {
+            Alert.alert('Error', 'Please enter your password');
+            return false;
+        }
+
+        return true;
+    };
+
+    const handleLogin = async () => {
+        if (!validateForm()) {
             return;
         }
 
         setLoading(true);
 
         try {
-            // Simulate API call - replace with your actual authentication logic
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // For demo purposes, we'll check if user exists in AsyncStorage
-            const userData = await AsyncStorage.getItem('userData');
-            
-            if (userData) {
-                const user = JSON.parse(userData);
-                if (user.email === email && user.password === password) {
-                    // Store login token
-                    await AsyncStorage.setItem('userToken', 'demo_token_' + Date.now());
-                    
-                    // Navigate to home or reload app
-                    navigation.reset({
-                        index: 0,
-                        routes: [{ name: 'Home' }],
-                    });
-                } else {
-                    Alert.alert('Error', 'Invalid email or password');
-                }
+            const response = await fetch(`${API_URL}/api/teacher/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email.trim(),
+                    password: password
+                }),
+            });
+
+            const data: LoginResponse = await response.json();
+            console.log(data)
+            console.log(typeof data.teacherId);
+
+            if (response.ok && data.teacherId) {
+                await AsyncStorage.setItem('teacherId', data.teacherId.toString());
+                await AsyncStorage.setItem('email', email.trim());
+
+                Alert.alert(
+                    'Success',
+                    data.message || 'Login successful!',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                navigation.reset({
+                                    index: 0,
+                                    routes: [{ name: 'Home' }],
+                                });
+                            }
+                        }
+                    ]
+                );
             } else {
-                Alert.alert('Error', 'User not found. Please sign up first.');
+                Alert.alert('Error', data.message || 'Login failed. Please check your credentials.');
             }
         } catch (error) {
-            Alert.alert('Error', 'Login failed. Please try again.');
             console.error('Login error:', error);
+            Alert.alert(
+                'Error',
+                'Network error. Please check your internet connection and try again.'
+            );
         } finally {
             setLoading(false);
         }
     };
 
+    useEffect(() => {
+        const checkLogin = async () => {
+            const userData = await AsyncStorage.getItem("userData")
+            if (userData) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                })
+            }
+        }
+        checkLogin()
+    }, [])
+
     return (
         <SafeAreaView style={styles.container}>
-            <KeyboardAvoidingView 
+            <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardAvoid}
             >
@@ -102,8 +146,8 @@ const Login: React.FC<LoginProps> = () => {
                             />
                         </View>
 
-                        <TouchableOpacity 
-                            style={[styles.loginButton, loading && styles.disabledButton]} 
+                        <TouchableOpacity
+                            style={[styles.loginButton, loading && styles.disabledButton]}
                             onPress={handleLogin}
                             disabled={loading}
                         >

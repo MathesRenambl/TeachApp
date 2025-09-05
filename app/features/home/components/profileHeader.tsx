@@ -1,21 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
 interface ProfileHeaderProps {
-    teacherName?: string;
     notificationCount?: number;
     onNotificationPress?: () => void;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
-    teacherName = "Gokul Thirumal",
     notificationCount = 3,
     onNotificationPress
 }) => {
+    const [teacherName, setTeacherName] = useState<string>('Teacher');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadTeacherName();
+    }, []);
+
+    const loadTeacherName = async () => {
+        try {
+            const userDataString = await AsyncStorage.getItem('userData');
+            if (userDataString) {
+                const userData = JSON.parse(userDataString);
+                if (userData.fullName) {
+                    setTeacherName(userData.fullName);
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            const email = await AsyncStorage.getItem('email');
+            if (email) {
+                const nameFromEmail = email.split('@')[0];
+                const formattedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
+                setTeacherName(formattedName);
+            }
+        } catch (error) {
+            console.error('Error loading teacher name:', error);
+            setTeacherName('Teacher');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (     
         <View style={styles.header}>
             <View style={styles.headerContent}>
@@ -28,7 +60,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                     </LinearGradient>
                     <View>
                         <Text style={styles.welcomeText}>Welcome back,</Text>
-                        <Text style={styles.teacherName}>{teacherName}</Text>
+                        <Text style={styles.teacherName}>
+                            {loading ? 'Loading...' : teacherName}
+                        </Text>
                     </View>
                 </View>
                 <TouchableOpacity 

@@ -13,6 +13,10 @@ interface Child {
     curriculum: 'State Board' | 'CBSE' | 'ICSE' | '';
     standard: string;
 }
+interface RegisterResponse {
+    message: string;
+    id?: number; 
+}
 
 interface SignUpProps {
     navigation: NavigationProp<any>;
@@ -33,6 +37,9 @@ const SignUp: React.FC<SignUpProps> = () => {
         standard: ''
     }]);
     const [loading, setLoading] = useState(false);
+
+     const API_URL = "http://192.168.1.38:3000";
+
 
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -119,41 +126,64 @@ const SignUp: React.FC<SignUpProps> = () => {
 
         setLoading(true);
 
-        try {
+            try {
+            const response = await fetch(`${API_URL}/api/teachers/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email.trim(), 
+                    password: password
+                }),
+            });
+
+
             // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // await new Promise(resolve => setTimeout(resolve, 1000));
 
-            const userData = {
-                fullName,
-                email,
-                password, // In real app, never store plain password
-                numberOfChildren: parseInt(numberOfChildren),
-                children,
-                createdAt: new Date().toISOString()
-            };
+            const data: RegisterResponse = await response.json();
+            console.log(data);
 
-            // Store user data (in real app, send to backend)
-            await AsyncStorage.setItem('userData', JSON.stringify(userData));
-            await AsyncStorage.setItem('userToken', 'demo_token_' + Date.now());
+            if (response.ok && data.id) {
+                // Store teacher data
+                await AsyncStorage.setItem('teacherId', data.id.toString());
+                await AsyncStorage.setItem('email', email.trim());
 
-            Alert.alert(
-                'Success',
-                'Account created successfully!',
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => {
-                            navigation.reset({
-                                index: 0,
-                                routes: [{ name: 'Home' }],
-                            });
+                // Store additional user data locally
+                const userData = {
+                    fullName,
+                    email,
+                    numberOfChildren: parseInt(numberOfChildren),
+                    children,
+                    createdAt: new Date().toISOString()
+                };
+                await AsyncStorage.setItem('userData', JSON.stringify(userData));
+
+                Alert.alert(
+                    'Success',
+                    data.message || 'Account created successfully!',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                navigation.reset({
+                                    index: 0,
+                                    routes: [{ name: 'Login' }],
+                                });
+                            }
                         }
-                    }
-                ]
-            );
+                    ]
+                );
+            } else {
+                Alert.alert('Error', data.message || 'Failed to create account. Please try again.');
+            }
         } catch (error) {
-            Alert.alert('Error', 'Failed to create account. Please try again.');
             console.error('SignUp error:', error);
+            Alert.alert(
+                'Error', 
+                'Network error. Please check your internet connection and try again.'
+            );
         } finally {
             setLoading(false);
         }
