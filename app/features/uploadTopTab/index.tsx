@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-nati
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import UploadComponent from '../uploadTopTab/components/upload';
+import StudentModal from './components/studentModal'; // Import the new StudentModal component
 
 const { width, height } = Dimensions.get('window');
 
@@ -111,7 +112,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     stats = {
         totalPDFs: 127,
         activeAssessments: 8,
-        totalStudents: 20,
+        totalStudents: 160, // Updated to match modal data
         recentUploads: 15
     },
     onLibraryPress = () => {},
@@ -145,6 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 }) => {
     const [currentStats, setCurrentStats] = useState(stats);
     const [currentActivities, setCurrentActivities] = useState(recentActivities);
+    const [showStudentModal, setShowStudentModal] = useState(false);
 
     // Handle file upload completion
     const handleFilesUploaded = (uploadedFiles: UploadedFile[]) => {
@@ -181,6 +183,11 @@ const Dashboard: React.FC<DashboardProps> = ({
         console.log('Upload completed:', files);
     };
 
+    // Handle student card press
+    const handleStudentCardPress = () => {
+        setShowStudentModal(true);
+    };
+
     return (
         <View style={styles.dashboardContainer}>
             {/* Statistics Cards */}
@@ -211,6 +218,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                         subtitle="Enrolled learners"
                         icon="group"
                         gradientColors={['#4facfe', '#00f2fe']}
+                        onPress={handleStudentCardPress} // Added onPress handler
                     />
                     <StatCard
                         title="This Week"
@@ -255,11 +263,11 @@ const Dashboard: React.FC<DashboardProps> = ({
                         onPress={onAnalyticsPress}
                     />
                     <QuickActionCard
-                        title="Manage Classes"
-                        description="Organize students and class groups"
+                        title="View All Students"
+                        description="Manage students by class and section"
                         icon="school"
                         color="#FF9500"
-                        onPress={() => console.log('Manage Classes pressed')}
+                        onPress={handleStudentCardPress} // Added student management action
                     />
                 </View>
             </View>
@@ -290,6 +298,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                     ))}
                 </View>
             </View>
+
+            {/* Student Modal */}
+            <StudentModal
+                visible={showStudentModal}
+                onClose={() => setShowStudentModal(false)}
+            />
         </View>
     );
 };
