@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, Dimensions, Alert } from 'react-native';
-import { ChevronRight, Plus, Edit3, Trash2, Download, Eye, FileText, Settings, Save, Languages, Upload } from 'lucide-react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, StyleSheet, SafeAreaView, Dimensions, Alert } from 'react-native';
+import { ChevronRight, Plus, Edit3, Trash2, Download, Eye, FileText, Settings } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from 'expo-file-system';
-import { Picker } from '@react-native-picker/picker'; // You'll need to install this library
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Picker } from '@react-native-picker/picker';
+import { Share } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const scale = (size: number) => (width / 375) * size;
 
@@ -36,9 +35,7 @@ interface QuestionType {
 interface ExamConfig {
     totalMarks: number;
     duration: number;
-    questionTypes: {
-        [key: string]: QuestionType;
-    };
+    questionTypes: { [key: string]: QuestionType };
     difficulty: string;
 }
 
@@ -64,11 +61,6 @@ interface OtherQuestion {
 }
 
 type Question = MatchQuestion | OtherQuestion;
-
-interface UploadPdfComponentProps {
-    uploadedFile: DocumentPicker.DocumentPickerAsset | null;
-    setUploadedFile: React.Dispatch<React.SetStateAction<DocumentPicker.DocumentPickerAsset | null>>;
-}
 
 type CurrentStep = 'selection' | 'configure' | 'generate' | 'preview';
 
@@ -111,41 +103,6 @@ const mockUploadedContent: UploadedContent[] = [
     }
 ];
 
-const UploadPdfComponent: React.FC<UploadPdfComponentProps> = ({ uploadedFile, setUploadedFile }) => {
-    const handleUpload = async () => {
-        try {
-            const result = await DocumentPicker.getDocumentAsync({
-                type: 'application/pdf',
-            });
-
-            if (!result.canceled && result.assets && result.assets.length > 0) {
-                const file = result.assets[0];
-                setUploadedFile(file);
-            }
-        } catch (err) {
-            console.error('Document Picker Error: ', err);
-            Alert.alert('Error', 'Failed to pick document.');
-        }
-    };
-
-    return (
-        <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Upload PDF Content</Text>
-            {uploadedFile ? (
-                <View style={styles.fileNameContainer}>
-                    <FileText size={scale(20)} color="#3B82F6" />
-                    <Text style={styles.fileNameText}>{uploadedFile.name}</Text>
-                </View>
-            ) : (
-                <TouchableOpacity style={styles.uploadButton} onPress={handleUpload}>
-                    <Upload size={scale(16)} color="#FFFFFF" />
-                    <Text style={styles.uploadButtonText}>Upload PDF</Text>
-                </TouchableOpacity>
-            )}
-        </View>
-    );
-};
-
 interface SelectionStepProps {
     selectedCurriculum: string;
     setSelectedCurriculum: React.Dispatch<React.SetStateAction<string>>;
@@ -165,7 +122,6 @@ interface SelectionStepProps {
     availableLanguagesForCBSE: string[];
     toggleChapterSelection: (chapter: string) => void;
     uploadedFile: DocumentPicker.DocumentPickerAsset | null;
-    setUploadedFile: React.Dispatch<React.SetStateAction<DocumentPicker.DocumentPickerAsset | null>>;
     examTitle: string;
     setExamTitle: React.Dispatch<React.SetStateAction<string>>;
 }
@@ -189,7 +145,6 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
     availableLanguagesForCBSE,
     toggleChapterSelection,
     uploadedFile,
-    setUploadedFile,
     examTitle,
     setExamTitle,
 }) => {
@@ -281,7 +236,15 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                     />
                 </View>
 
-                <UploadPdfComponent uploadedFile={uploadedFile} setUploadedFile={setUploadedFile} />
+                {uploadedFile && (
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Selected PDF</Text>
+                        <View style={styles.fileNameContainer}>
+                            <FileText size={scale(20)} color="#3B82F6" />
+                            <Text style={styles.fileNameText}>{uploadedFile.name}</Text>
+                        </View>
+                    </View>
+                )}
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Select Curriculum</Text>
@@ -643,26 +606,21 @@ const ConfigureStep: React.FC<ConfigureStepProps> = ({
                 animationType="slide"
                 transparent={true}
                 visible={modalVisible}
-                onRequestClose={() => {
-                    setModalVisible(!modalVisible);
-                }}
+                onRequestClose={() => setModalVisible(false)}
             >
                 <View style={styles.centeredView}>
                     <View style={styles.modalView}>
                         <Text style={styles.modalTitle}>Add Question Type</Text>
-                       
                         <Picker
                             selectedValue={selectedQuestionType}
                             style={styles.picker}
-                            onValueChange={(itemValue, itemIndex) =>
-                                setSelectedQuestionType(itemValue)
-                            }>
+                            onValueChange={(itemValue) => setSelectedQuestionType(itemValue)}
+                        >
                             {predefinedQuestionTypes.map((type, index) => (
                                 <Picker.Item key={index} label={type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} value={type} />
                             ))}
                             <Picker.Item label="Type new" value="custom" />
                         </Picker>
-
                         {selectedQuestionType === 'custom' && (
                             <TextInput
                                 style={styles.textInput}
@@ -671,11 +629,10 @@ const ConfigureStep: React.FC<ConfigureStepProps> = ({
                                 value={customQuestionType}
                             />
                         )}
-
                         <View style={styles.buttonRow}>
                             <TouchableOpacity
                                 style={[styles.modalButton, styles.buttonClose]}
-                                onPress={() => setModalVisible(!modalVisible)}
+                                onPress={() => setModalVisible(false)}
                             >
                                 <Text style={styles.textStyle}>Cancel</Text>
                             </TouchableOpacity>
@@ -734,371 +691,364 @@ const PreviewStep: React.FC<{
     navigate,
     examTitle,
 }) => {
-        const getCorrectOptionIndex = (question: Question) => {
-            if (question.type === 'multiple-choice' && 'options' in question && 'correctAnswer' in question) {
-                if (question.options && question.correctAnswer) {
-                    return question.options.indexOf(question.correctAnswer as string);
-                }
+    const getCorrectOptionIndex = (question: Question) => {
+        if (question.type === 'multiple-choice' && 'options' in question && 'correctAnswer' in question) {
+            if (question.options && question.correctAnswer) {
+                return question.options.indexOf(question.correctAnswer as string);
             }
-            return -1;
-        };
+        }
+        return -1;
+    };
 
-        const getCorrectTrueFalse = (question: Question) => {
-            if (question.type === 'true-false' && 'correctAnswer' in question) {
-                return (question.correctAnswer as string).toLowerCase() === 'true';
-            }
-            return null;
-        };
+    const getCorrectTrueFalse = (question: Question) => {
+        if (question.type === 'true-false' && 'correctAnswer' in question) {
+            return (question.correctAnswer as string).toLowerCase() === 'true';
+        }
+        return null;
+    };
 
-        const generatePdfContent = () => {
-            const sections = Object.entries(examConfig.questionTypes).map(([type, values]) => {
-                const title = type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                return {
-                    title,
-                    questions: generatedQuestions.filter(q => q.type === type),
-                    totalMarks: values.count * values.marks,
-                };
-            }).filter(section => section.questions.length > 0);
+    const generatePdfContent = () => {
+        const sections = Object.entries(examConfig.questionTypes).map(([type, values]) => {
+            const title = type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return {
+                title,
+                questions: generatedQuestions.filter(q => q.type === type),
+                totalMarks: values.count * values.marks,
+            };
+        }).filter(section => section.questions.length > 0);
 
-            const content = sections.map(section => `
-                <div style="margin-bottom: 24px;">
-                    <h2 style="font-size: 18px; font-weight: bold; color: #111827; margin-bottom: 8px;">Section: ${section.title} (${section.totalMarks} marks)</h2>
-                    ${section.questions.map((q, qIndex) => `
-                        <div style="margin-bottom: 16px; border-bottom: 1px solid #E5E7EB; padding-bottom: 16px;">
-                            <p style="font-size: 16px; color: #111827; font-weight: 500;">${qIndex + 1}. ${q.question}</p>
-                            ${q.type === 'multiple-choice' && 'options' in q && q.options && `
-                                <ul style="list-style-type: none; padding-left: 0; margin-top: 8px;">
-                                    ${q.options.map((option, oIndex) => `
-                                        <li style="font-size: 14px; color: #374151; margin-bottom: 4px;">
-                                            (${String.fromCharCode(65 + oIndex)}) ${option}
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                            `}
-                            ${q.type === 'true-false' && 'options' in q && q.options && `
-                                <p style="font-size: 14px; color: #374151; margin-top: 8px;">(True/False)</p>
-                            `}
-                            ${q.type === 'match-the-following' && 'leftColumn' in q && 'rightColumn' in q && `
-                                <div style="display: flex; flex-direction: row; justify-content: space-between; margin-top: 8px;">
-                                    <div style="flex: 1; padding-right: 16px;">
-                                        <h4 style="font-size: 14px; font-weight: 600;">Column A</h4>
-                                        <ul style="list-style-type: none; padding-left: 0;">
-                                            ${q.leftColumn.map((item, i) => `
-                                                <li style="font-size: 14px; color: #374151; margin-bottom: 4px;">${i + 1}. ${item}</li>
-                                            `).join('')}
-                                        </ul>
-                                    </div>
-                                    <div style="flex: 1; padding-left: 16px;">
-                                        <h4 style="font-size: 14px; font-weight: 600;">Column B</h4>
-                                        <ul style="list-style-type: none; padding-left: 0;">
-                                            ${q.rightColumn.map((item, i) => `
-                                                <li style="font-size: 14px; color: #374151; margin-bottom: 4px;">${String.fromCharCode(65 + i)}. ${item}</li>
-                                            `).join('')}
-                                        </ul>
-                                    </div>
+        const content = sections.map(section => `
+            <div style="margin-bottom: 24px;">
+                <h2 style="font-size: 18px; font-weight: bold; color: #111827; margin-bottom: 8px;">Section: ${section.title} (${section.totalMarks} marks)</h2>
+                ${section.questions.map((q, qIndex) => `
+                    <div style="margin-bottom: 16px; border-bottom: 1px solid #E5E7EB; padding-bottom: 16px;">
+                        <p style="font-size: 16px; color: #111827; font-weight: 500;">${qIndex + 1}. ${q.question}</p>
+                        ${q.type === 'multiple-choice' && 'options' in q && q.options && `
+                            <ul style="list-style-type: none; padding-left: 0; margin-top: 8px;">
+                                ${q.options.map((option, oIndex) => `
+                                    <li style="font-size: 14px; color: #374151; margin-bottom: 4px;">
+                                        (${String.fromCharCode(65 + oIndex)}) ${option}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        `}
+                        ${q.type === 'true-false' && 'options' in q && q.options && `
+                            <p style="font-size: 14px; color: #374151; margin-top: 8px;">(True/False)</p>
+                        `}
+                        ${q.type === 'match-the-following' && 'leftColumn' in q && 'rightColumn' in q && `
+                            <div style="display: flex; flex-direction: row; justify-content: space-between; margin-top: 8px;">
+                                <div style="flex: 1; padding-right: 16px;">
+                                    <h4 style="font-size: 14px; font-weight: 600;">Column A</h4>
+                                    <ul style="list-style-type: none; padding-left: 0;">
+                                        ${q.leftColumn.map((item, i) => `
+                                            <li style="font-size: 14px; color: #374151; margin-bottom: 4px;">${i + 1}. ${item}</li>
+                                        `).join('')}
+                                    </ul>
                                 </div>
-                            `}
-                        </div>
-                    `).join('')}
-                </div>
-            `).join('');
+                                <div style="flex: 1; padding-left: 16px;">
+                                    <h4 style="font-size: 14px; font-weight: 600;">Column B</h4>
+                                    <ul style="list-style-type: none; padding-left: 0;">
+                                        ${q.rightColumn.map((item, i) => `
+                                            <li style="font-size: 14px; color: #374151; margin-bottom: 4px;">${String.fromCharCode(65 + i)}. ${item}</li>
+                                        `).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                `).join('')}
+            </div>
+        `).join('');
 
-            const answerKeyContent = `
-                <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; margin-top: 32px;">
-                    <h3 style="font-size: 16px; font-weight: bold; text-align: center; color: #111827; margin-bottom: 12px;">Answer Key</h3>
-                    ${generatedQuestions.map((q, index) => {
-                const answer = getAnswerForQuestion(q);
-                return `<p style="font-size: 12px; color: #374151; margin-bottom: 4px;">Q${index + 1}: ${answer}</p>`;
-            }).join('')}
-                </div>
-            `;
+        const answerKeyContent = `
+            <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; margin-top: 32px;">
+                <h3 style="font-size: 16px; font-weight: bold; text-align: center; color: #111827; margin-bottom: 12px;">Answer Key</h3>
+                ${generatedQuestions.map((q, index) => {
+                    const answer = getAnswerForQuestion(q);
+                    return `<p style="font-size: 12px; color: #374151; margin-bottom: 4px;">Q${index + 1}: ${answer}</p>`;
+                }).join('')}
+            </div>
+        `;
 
-            const htmlContent = `
-                <html>
-                    <head>
-                        <title>${examTitle || 'Assessment'}</title>
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
-                        <style>
-                            body { font-family: sans-serif; padding: 20px; color: #111827; line-height: 1.6; }
-                            h1 { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 10px; }
-                            h2 { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
-                            .header { text-align: center; margin-bottom: 24px; }
-                            .info-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-                            .info-table td { padding: 8px; border: 1px solid #E5E7EB; font-size: 14px; }
-                            .question-section { margin-bottom: 24px; border-bottom: 1px solid #E5E7EB; padding-bottom: 16px; }
-                            .question-text { font-size: 16px; font-weight: 500; margin-bottom: 8px; }
-                            .options-list { list-style-type: none; padding: 0; margin-left: 16px; }
-                            .option-item { margin-bottom: 4px; font-size: 14px; }
-                            .answer-key { border-top: 2px solid #111827; margin-top: 40px; padding-top: 20px; }
-                            .answer-key h2 { text-align: center; }
-                            .answer-item { font-size: 14px; margin-bottom: 8px; }
-                            .match-table { width: 100%; margin-top: 8px; }
-                            .match-table td { vertical-align: top; padding: 8px; }
-                            .match-column-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-                            .match-list { list-style-type: none; padding: 0; }
-                            .match-item { font-size: 14px; margin-bottom: 4px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="header">
-                            <h1>${examTitle || 'Assessment'}</h1>
-                            <p style="font-size: 14px; color: #6B7280;">Total Marks: ${calculateTotalMarks()} | Duration: ${examConfig.duration} minutes</p>
-                            <table class="info-table">
-                                <tr>
-                                    <td><strong>Curriculum:</strong> ${selectedCurriculum || 'N/A'}</td>
-                                    <td><strong>Standard:</strong> ${selectedStandard || 'N/A'}</td>
-                                    <td><strong>Subject:</strong> ${selectedSubject || 'N/A'}</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="3"><strong>Chapters:</strong> ${selectedChapters.length > 0 ? selectedChapters.join(', ') : 'N/A'}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="main-content">
-                            ${content}
-                        </div>
-                        <div class="answer-key">
-                            ${answerKeyContent}
-                        </div>
-                    </body>
-                </html>
-            `;
-            return htmlContent;
-        };
+        const htmlContent = `
+            <html>
+                <head>
+                    <title>${examTitle || 'Assessment'}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+                    <style>
+                        body { font-family: sans-serif; padding: 20px; color: #111827; line-height: 1.6; }
+                        h1 { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 10px; }
+                        h2 { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+                        .header { text-align: center; margin-bottom: 24px; }
+                        .info-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+                        .info-table td { padding: 8px; border: 1px solid #E5E7EB; font-size: 14px; }
+                        .question-section { margin-bottom: 24px; border-bottom: 1px solid #E5E7EB; padding-bottom: 16px; }
+                        .question-text { font-size: 16px; font-weight: 500; margin-bottom: 8px; }
+                        .options-list { list-style-type: none; padding: 0; margin-left: 16px; }
+                        .option-item { margin-bottom: 4px; font-size: 14px; }
+                        .answer-key { border-top: 2px solid #111827; margin-top: 40px; padding-top: 20px; }
+                        .answer-key h2 { text-align: center; }
+                        .answer-item { font-size: 14px; margin-bottom: 8px; }
+                        .match-table { width: 100%; margin-top: 8px; }
+                        .match-table td { vertical-align: top; padding: 8px; }
+                        .match-column-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+                        .match-list { list-style-type: none; padding: 0; }
+                        .match-item { font-size: 14px; margin-bottom: 4px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>${examTitle || 'Assessment'}</h1>
+                        <p style="font-size: 14px; color: #6B7280;">Total Marks: ${calculateTotalMarks()} | Duration: ${examConfig.duration} minutes</p>
+                        <table class="info-table">
+                            <tr>
+                                <td><strong>Curriculum:</strong> ${selectedCurriculum || 'N/A'}</td>
+                                <td><strong>Standard:</strong> ${selectedStandard || 'N/A'}</td>
+                                <td><strong>Subject:</strong> ${selectedSubject || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3"><strong>Chapters:</strong> ${selectedChapters.length > 0 ? selectedChapters.join(', ') : 'N/A'}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="main-content">
+                        ${content}
+                    </div>
+                    <div class="answer-key">
+                        ${answerKeyContent}
+                    </div>
+                </body>
+            </html>
+        `;
+        return htmlContent;
+    };
 
-        const downloadPdf = async () => {
-            const htmlContent = generatePdfContent();
-            const { uri } = await FileSystem.documentDirectory;
-            if (uri) {
-                const pdfUri = `${uri}${examTitle.replace(/ /g, '_') || 'assessment'}.pdf`;
-                try {
-                    await FileSystem.writeAsStringAsync(pdfUri, htmlContent, { encoding: FileSystem.EncodingType.UTF8 });
-                    const result = await FileSystem.getContentUriAsync(pdfUri);
-                    await Share.share({
-                        url: result.uri,
-                        title: 'Assessment',
-                    });
-                } catch (e) {
-                    console.error('Error during PDF creation or sharing: ', e);
-                    Alert.alert('Error', 'Failed to generate and share the PDF.');
-                }
-            } else {
-                Alert.alert('Error', 'Could not access document directory.');
+    const downloadPdf = async () => {
+        const htmlContent = generatePdfContent();
+        const { uri } = await FileSystem.documentDirectory;
+        if (uri) {
+            const pdfUri = `${uri}${examTitle.replace(/ /g, '_') || 'assessment'}.pdf`;
+            try {
+                await FileSystem.writeAsStringAsync(pdfUri, htmlContent, { encoding: FileSystem.EncodingType.UTF8 });
+                const result = await FileSystem.getContentUriAsync(pdfUri);
+                await Share.share({
+                    url: result.uri,
+                    title: 'Assessment',
+                });
+            } catch (e) {
+                console.error('Error during PDF creation or sharing: ', e);
+                Alert.alert('Error', 'Failed to generate and share the PDF.');
             }
-        };
+        } else {
+            Alert.alert('Error', 'Could not access document directory.');
+        }
+    };
 
-        return (
-            <ScrollView style={styles.container}>
-                <View style={styles.card}>
-                    <View style={styles.previewHeader}>
-                        <View style={styles.previewHeaderInfo}>
-                            <Text style={styles.title}>Assessment Preview</Text>
-                            <Text style={styles.subtitle}>Review and edit the questions</Text>
-                        </View>
-                        <View style={styles.previewActions}>
-                            <TouchableOpacity
-                                style={styles.iconButton}
-                                onPress={() => setShowPdfPreview(true)}
-                            >
-                                <Eye size={scale(20)} color="#059669" />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.iconButton}>
-                                <Download size={scale(20)} color="#2563EB" />
-                            </TouchableOpacity>
-                        </View>
+    return (
+        <ScrollView style={styles.container}>
+            <View style={styles.card}>
+                <View style={styles.previewHeader}>
+                    <View style={styles.previewHeaderInfo}>
+                        <Text style={styles.title}>Assessment Preview</Text>
+                        <Text style={styles.subtitle}>Review and edit the questions</Text>
                     </View>
-
-                    <View style={styles.assessmentInfo}>
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>Curriculum:</Text>
-                            <Text style={styles.infoValue}>{selectedCurriculum || 'N/A'}</Text>
-                        </View>
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>Standard:</Text>
-                            <Text style={styles.infoValue}>{selectedStandard || 'N/A'}</Text>
-                        </View>
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>Subject:</Text>
-                            <Text style={styles.infoValue}>{selectedSubject || 'N/A'}</Text>
-                        </View>
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>Chapters:</Text>
-                            <Text style={styles.infoValue}>{selectedChapters.length > 0 ? selectedChapters.join(', ') : 'N/A'}</Text>
-                        </View>
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>Language:</Text>
-                            <Text style={styles.infoValue}>{selectedLanguage || 'N/A'}</Text>
-                        </View>
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>Total Marks</Text>
-                            <Text style={styles.infoValue}>{calculateTotalMarks()}</Text>
-                        </View>
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>Duration</Text>
-                            <Text style={styles.infoValue}>{examConfig.duration} min</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.questionsContainer}>
-                        {generatedQuestions.map((question, index) => {
-                            const correctOptionIndex = getCorrectOptionIndex(question);
-                            const correctTrueFalse = getCorrectTrueFalse(question);
-                            return (
-                                <View key={question.id} style={styles.questionCard}>
-                                    <View style={styles.questionHeader}>
-                                        <View style={styles.questionBadges}>
-                                            <View style={styles.questionNumber}>
-                                                <Text style={styles.questionNumberText}>Q{index + 1}</Text>
-                                            </View>
-                                            <View style={styles.marksBadge}>
-                                                <Text style={styles.marksBadgeText}>{question.marks} marks</Text>
-                                            </View>
-                                            <View style={styles.difficultyBadge}>
-                                                <Text style={styles.difficultyBadgeText}>{question.difficulty}</Text>
-                                            </View>
-                                        </View>
-                                        <View style={styles.questionActions}>
-                                            <TouchableOpacity style={styles.actionButton}>
-                                                <Edit3 size={scale(16)} color="#6B7280" />
-                                            </TouchableOpacity>
-                                            <TouchableOpacity style={styles.actionButton}>
-                                                <Trash2 size={scale(16)} color="#EF4444" />
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-
-                                    <Text style={styles.questionText}>{question.question}</Text>
-
-                                    {question.type === 'multiple-choice' && 'options' in question && question.options && (
-                                        <View style={styles.optionsContainer}>
-                                            {question.options.map((option, optionIndex) => (
-                                                <View key={optionIndex} style={styles.optionRow}>
-                                                    <View style={[
-                                                        styles.optionCircle,
-                                                        optionIndex === correctOptionIndex && styles.correctOptionCircle
-                                                    ]}>
-                                                        <Text style={[
-                                                            styles.optionLetter,
-                                                            optionIndex === correctOptionIndex && styles.correctOptionLetter
-                                                        ]}>
-                                                            {String.fromCharCode(65 + optionIndex)}
-                                                        </Text>
-                                                    </View>
-                                                    <Text style={[
-                                                        styles.optionText,
-                                                        optionIndex === correctOptionIndex && styles.correctOptionText
-                                                    ]}>
-                                                        {option}
-                                                    </Text>
-                                                </View>
-                                            ))}
-                                        </View>
-                                    )}
-
-                                    {question.type === 'true-false' && 'options' in question && (
-                                        <View style={styles.trueFalseContainer}>
-                                            <View style={[
-                                                styles.trueFalseOption,
-                                                correctTrueFalse === true && styles.correctTrueFalse
-                                            ]}>
-                                                <Text style={[
-                                                    styles.trueFalseText,
-                                                    correctTrueFalse === true && styles.correctTrueFalseText
-                                                ]}>
-                                                    True
-                                                </Text>
-                                            </View>
-                                            <View style={[
-                                                styles.trueFalseOption,
-                                                correctTrueFalse === false && styles.correctTrueFalse
-                                            ]}>
-                                                <Text style={[
-                                                    styles.trueFalseText,
-                                                    correctTrueFalse === false && styles.correctTrueFalseText
-                                                ]}>
-                                                    False
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    )}
-
-                                    {question.type === 'match-the-following' && 'leftColumn' in question && 'rightColumn' in question && (
-                                        <View style={styles.matchContainer}>
-                                            <View style={styles.matchColumn}>
-                                                <Text style={styles.matchColumnTitle}>Column A</Text>
-                                                {question.leftColumn.map((item, i) => (
-                                                    <View key={i} style={styles.matchItem}>
-                                                        <Text style={styles.matchItemNumber}>{i + 1}.</Text>
-                                                        <Text style={styles.matchItemText}>{item}</Text>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                            <View style={styles.matchColumn}>
-                                                <Text style={styles.matchColumnTitle}>Column B</Text>
-                                                {question.rightColumn.map((item, i) => (
-                                                    <View key={i} style={styles.matchItem}>
-                                                        <Text style={styles.matchItemLetter}>{String.fromCharCode(65 + i)}.</Text>
-                                                        <Text style={styles.matchItemText}>{item}</Text>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                        </View>
-                                    )}
-                                </View>
-                            );
-                        })}
-                    </View>
-
-                    <View style={styles.previewActionsBottom}>
+                    <View style={styles.previewActions}>
                         <TouchableOpacity
-                            style={styles.secondaryButton}
-                            onPress={() => setCurrentStep('configure')}
+                            style={styles.iconButton}
+                            onPress={() => setShowPdfPreview(true)}
                         >
-                            <Text style={styles.secondaryButtonText}>Re-configure</Text>
+                            <Eye size={scale(20)} color="#059669" />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.greenButton} onPress={() => navigate.navigate("ExamApp")}>
-                            <Text style={styles.greenButtonText}>Publish</Text>
+                        <TouchableOpacity style={styles.iconButton} onPress={downloadPdf}>
+                            <Download size={scale(20)} color="#2563EB" />
                         </TouchableOpacity>
                     </View>
                 </View>
-            </ScrollView>
-        );
-    };
+
+                <View style={styles.assessmentInfo}>
+                    <View style={styles.infoItem}>
+                        <Text style={styles.infoLabel}>Curriculum:</Text>
+                        <Text style={styles.infoValue}>{selectedCurriculum || 'N/A'}</Text>
+                    </View>
+                    <View style={styles.infoItem}>
+                        <Text style={styles.infoLabel}>Standard:</Text>
+                        <Text style={styles.infoValue}>{selectedStandard || 'N/A'}</Text>
+                    </View>
+                    <View style={styles.infoItem}>
+                        <Text style={styles.infoLabel}>Subject:</Text>
+                        <Text style={styles.infoValue}>{selectedSubject || 'N/A'}</Text>
+                    </View>
+                    <View style={styles.infoItem}>
+                        <Text style={styles.infoLabel}>Chapters:</Text>
+                        <Text style={styles.infoValue}>{selectedChapters.length > 0 ? selectedChapters.join(', ') : 'N/A'}</Text>
+                    </View>
+                    <View style={styles.infoItem}>
+                        <Text style={styles.infoLabel}>Language:</Text>
+                        <Text style={styles.infoValue}>{selectedLanguage || 'N/A'}</Text>
+                    </View>
+                    <View style={styles.infoItem}>
+                        <Text style={styles.infoLabel}>Total Marks</Text>
+                        <Text style={styles.infoValue}>{calculateTotalMarks()}</Text>
+                    </View>
+                    <View style={styles.infoItem}>
+                        <Text style={styles.infoLabel}>Duration</Text>
+                        <Text style={styles.infoValue}>{examConfig.duration} min</Text>
+                    </View>
+                </View>
+
+                <View style={styles.questionsContainer}>
+                    {generatedQuestions.map((question, index) => {
+                        const correctOptionIndex = getCorrectOptionIndex(question);
+                        const correctTrueFalse = getCorrectTrueFalse(question);
+                        return (
+                            <View key={question.id} style={styles.questionCard}>
+                                <View style={styles.questionHeader}>
+                                    <View style={styles.questionBadges}>
+                                        <View style={styles.questionNumber}>
+                                            <Text style={styles.questionNumberText}>Q{index + 1}</Text>
+                                        </View>
+                                        <View style={styles.marksBadge}>
+                                            <Text style={styles.marksBadgeText}>{question.marks} marks</Text>
+                                        </View>
+                                        <View style={styles.difficultyBadge}>
+                                            <Text style={styles.difficultyBadgeText}>{question.difficulty}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.questionActions}>
+                                        <TouchableOpacity style={styles.actionButton}>
+                                            <Edit3 size={scale(16)} color="#6B7280" />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity style={styles.actionButton}>
+                                            <Trash2 size={scale(16)} color="#EF4444" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+
+                                <Text style={styles.questionText}>{question.question}</Text>
+
+                                {question.type === 'multiple-choice' && 'options' in question && question.options && (
+                                    <View style={styles.optionsContainer}>
+                                        {question.options.map((option, optionIndex) => (
+                                            <View key={optionIndex} style={styles.optionRow}>
+                                                <View style={[
+                                                    styles.optionCircle,
+                                                    optionIndex === correctOptionIndex && styles.correctOptionCircle
+                                                ]}>
+                                                    <Text style={[
+                                                        styles.optionLetter,
+                                                        optionIndex === correctOptionIndex && styles.correctOptionLetter
+                                                    ]}>
+                                                        {String.fromCharCode(65 + optionIndex)}
+                                                    </Text>
+                                                </View>
+                                                <Text style={[
+                                                    styles.optionText,
+                                                    optionIndex === correctOptionIndex && styles.correctOptionText
+                                                ]}>
+                                                    {option}
+                                                </Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
+
+                                {question.type === 'true-false' && 'options' in question && (
+                                    <View style={styles.trueFalseContainer}>
+                                        <View style={[
+                                            styles.trueFalseOption,
+                                            correctTrueFalse === true && styles.correctTrueFalse
+                                        ]}>
+                                            <Text style={[
+                                                styles.trueFalseText,
+                                                correctTrueFalse === true && styles.correctTrueFalseText
+                                            ]}>
+                                                True
+                                            </Text>
+                                        </View>
+                                        <View style={[
+                                            styles.trueFalseOption,
+                                            correctTrueFalse === false && styles.correctTrueFalse
+                                        ]}>
+                                            <Text style={[
+                                                styles.trueFalseText,
+                                                correctTrueFalse === false && styles.correctTrueFalseText
+                                            ]}>
+                                                False
+                                            </Text>
+                                        </View>
+                                    </View>
+                                )}
+
+                                {question.type === 'match-the-following' && 'leftColumn' in question && 'rightColumn' in question && (
+                                    <View style={styles.matchContainer}>
+                                        <View style={styles.matchColumn}>
+                                            <Text style={styles.matchColumnTitle}>Column A</Text>
+                                            {question.leftColumn.map((item, i) => (
+                                                <View key={i} style={styles.matchItem}>
+                                                    <Text style={styles.matchItemNumber}>{i + 1}.</Text>
+                                                    <Text style={styles.matchItemText}>{item}</Text>
+                                                </View>
+                                            ))}
+                                        </View>
+                                        <View style={styles.matchColumn}>
+                                            <Text style={styles.matchColumnTitle}>Column B</Text>
+                                            {question.rightColumn.map((item, i) => (
+                                                <View key={i} style={styles.matchItem}>
+                                                    <Text style={styles.matchItemLetter}>{String.fromCharCode(65 + i)}.</Text>
+                                                    <Text style={styles.matchItemText}>{item}</Text>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    </View>
+                                )}
+                            </View>
+                        );
+                    })}
+                </View>
+
+                <View style={styles.previewActionsBottom}>
+                    <TouchableOpacity
+                        style={styles.secondaryButton}
+                        onPress={() => setCurrentStep('configure')}
+                    >
+                        <Text style={styles.secondaryButtonText}>Re-configure</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.greenButton} onPress={() => navigate.navigate("ExamApp")}>
+                        <Text style={styles.greenButtonText}>Publish</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </ScrollView>
+    );
+};
 
 // Parse API response into Question type
 const parseGeneratedQuestions = (examData: any): Question[] => {
     let questions: Question[] = [];
 
-    // Handle the array response format from examsByTeacher API
-    let examPaper;
-    if (Array.isArray(examData)) {
-        if (examData.length === 0) return questions;
-        examPaper = examData[0].examPaper; // Get the first exam's examPaper
-    } else if (examData.examPaper) {
-        examPaper = examData.examPaper;
-    } else {
-        console.warn('Invalid exam data structure:', examData);
+    if (!Array.isArray(examData) || examData.length === 0) {
+        console.warn('Invalid or empty exam data:', examData);
         return questions;
     }
 
+    const latestExam = examData.sort((a: any, b: any) => 
+        new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
+    )[0];
+
+    const examPaper = latestExam.examPaper;
     if (!examPaper || !examPaper.sections || !Array.isArray(examPaper.sections)) {
         console.warn('No sections found in exam paper:', examPaper);
         return questions;
     }
 
-    const sections = examPaper.sections;
-
-    sections.forEach((section: any, sectionIndex: number) => {
+    examPaper.sections.forEach((section: any, sectionIndex: number) => {
         const sectionQuestions = section.questions || [];
 
         sectionQuestions.forEach((q: any, questionIndex: number) => {
-            // Handle different possible field names for question type
-            let questionType = (q.questionType || q.type || q.question_type || 'multiple-choice')
+            let questionType = (q.questionType || q.type || 'multiple-choice')
                 .toLowerCase()
-                .replace(/_/g, '-')
-                .replace(/\s+/g, '-');
+                .replace(/_/g, '-');
 
-            // Normalize question types
             if (questionType === 'multiple-choice' || questionType === 'multiple_choice') {
                 questionType = 'multiple-choice';
             } else if (questionType === 'true-false' || questionType === 'true_false') {
@@ -1112,35 +1062,18 @@ const parseGeneratedQuestions = (examData: any): Question[] => {
             let newQuestion: Question = {
                 id: q.id || `q_${sectionIndex}_${questionIndex}`,
                 type: questionType,
-                question: q.questionText || q.question || q.question_text || 'No question text',
-                marks: q.marks || 1,
+                question: q.question || q.questionText || 'No question text',
+                marks: q.marks || section.marksPerQuestion || 1,
                 difficulty: q.difficulty || 'medium',
             };
 
-            if (questionType === 'multiple-choice') {
+            if (questionType === 'multiple-choice' || questionType === 'true-false') {
                 newQuestion.options = Array.isArray(q.options) ? q.options : [];
-                newQuestion.correctAnswer = q.answer || q.correctAnswer || '';
-            } else if (questionType === 'true-false') {
-                newQuestion.options = Array.isArray(q.options) ? q.options : ['True', 'False'];
                 newQuestion.correctAnswer = q.answer || q.correctAnswer || '';
             } else if (questionType === 'match-the-following') {
                 newQuestion.leftColumn = Array.isArray(q.left) ? q.left : (Array.isArray(q.leftColumn) ? q.leftColumn : []);
                 newQuestion.rightColumn = Array.isArray(q.right) ? q.right : (Array.isArray(q.rightColumn) ? q.rightColumn : []);
-
-                // Handle correctAnswer for match-the-following
-                if (q.answer && typeof q.answer === 'object' && !Array.isArray(q.answer)) {
-                    if ('left' in q.answer && 'right' in q.answer) {
-                        newQuestion.correctAnswer = {
-                            [q.answer.left || '']: q.answer.right || '',
-                        };
-                    } else {
-                        newQuestion.correctAnswer = q.answer;
-                    }
-                } else if (q.correctAnswer && typeof q.correctAnswer === 'object') {
-                    newQuestion.correctAnswer = q.correctAnswer;
-                } else {
-                    newQuestion.correctAnswer = {};
-                }
+                newQuestion.correctAnswer = q.answer && typeof q.answer === 'object' ? q.answer : {};
             } else if (questionType === 'short-answer') {
                 newQuestion.correctAnswer = q.answer || q.correctAnswer || 'N/A';
             }
@@ -1153,8 +1086,7 @@ const parseGeneratedQuestions = (examData: any): Question[] => {
     return questions;
 };
 
-// Define getAnswerForQuestion at the top level
-// Replace the entire getAnswerForQuestion function (around line 991)
+// Define getAnswerForQuestion
 const getAnswerForQuestion = (question: Question): string => {
     try {
         if (question.type === 'multiple-choice' && 'options' in question && question.options && 'correctAnswer' in question) {
@@ -1163,27 +1095,21 @@ const getAnswerForQuestion = (question: Question): string => {
         } else if (question.type === 'true-false' && 'correctAnswer' in question) {
             return (question.correctAnswer as string) || 'N/A';
         } else if (question.type === 'match-the-following' && 'correctAnswer' in question && 'leftColumn' in question && 'rightColumn' in question) {
-            // Ensure correctAnswer is an object and not null/undefined
             if (!question.correctAnswer || typeof question.correctAnswer !== 'object') {
                 console.warn(`Invalid correctAnswer for question ${question.id}:`, question.correctAnswer);
                 return 'N/A';
             }
 
-            // Ensure leftColumn and rightColumn are arrays
             const leftColumn = Array.isArray(question.leftColumn) ? question.leftColumn : [];
             const rightColumn = Array.isArray(question.rightColumn) ? question.rightColumn : [];
 
-            // Check if correctAnswer is empty or malformed
             if (Object.keys(question.correctAnswer).length === 0) {
                 console.warn(`Empty correctAnswer for match-the-following question ${question.id}`);
                 return 'N/A';
             }
 
-            // Handle the case where correctAnswer might have {left, right} format instead of Record<string, string>
             let answerRecord: Record<string, string> = {};
-
             if ('left' in question.correctAnswer && 'right' in question.correctAnswer) {
-                // Convert {left, right} format to proper Record<string, string>
                 const leftVal = (question.correctAnswer as any).left;
                 const rightVal = (question.correctAnswer as any).right;
                 if (typeof leftVal === 'string' && typeof rightVal === 'string') {
@@ -1193,28 +1119,24 @@ const getAnswerForQuestion = (question: Question): string => {
                     return 'N/A';
                 }
             } else {
-                // Assume it's already in Record<string, string> format
                 answerRecord = question.correctAnswer as Record<string, string>;
             }
 
             const answerPairs = Object.entries(answerRecord)
                 .map(([left, right]) => {
-                    // Validate that left and right are strings
                     if (typeof left !== 'string' || typeof right !== 'string') {
                         console.warn(`Invalid key-value pair in correctAnswer for question ${question.id}:`, { left, right });
                         return null;
                     }
                     const leftIndex = leftColumn.indexOf(left);
                     const rightIndex = rightColumn.indexOf(right);
-                    // Use the right value directly if index is not found
                     const rightLetter = rightIndex !== -1 ? String.fromCharCode(65 + rightIndex) : right;
-                    // Only include valid pairs
                     if (leftIndex !== -1 && rightLetter) {
                         return `${leftIndex + 1}-${rightLetter}`;
                     }
                     return null;
                 })
-                .filter((pair): pair is string => pair !== null) // Remove invalid pairs
+                .filter((pair): pair is string => pair !== null)
                 .sort((a, b) => parseInt(a.split('-')[0]) - parseInt(b.split('-')[0]))
                 .join(', ');
 
@@ -1241,9 +1163,7 @@ const CustomizerAssessment: React.FC = () => {
     const [examConfig, setExamConfig] = useState<ExamConfig>({
         totalMarks: 50,
         duration: 60,
-        questionTypes: {
-           
-        },
+        questionTypes: {},
         difficulty: 'mixed',
     });
     const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
@@ -1253,6 +1173,27 @@ const CustomizerAssessment: React.FC = () => {
     const navigate = useNavigation();
 
     const API_URL = 'http://192.168.1.38:3000';
+
+    useEffect(() => {
+        const loadSelectedPdf = async () => {
+            try {
+                const stored = await AsyncStorage.getItem('selectedPdf');
+                if (stored) {
+                    const json = JSON.parse(stored);
+                    setUploadedFile({
+                        name: json.title,
+                        uri: json.url,
+                        mimeType: 'application/pdf',
+                        size: 0,
+                    });
+                    // Optional: await AsyncStorage.removeItem('selectedPdf');
+                }
+            } catch (error) {
+                console.error('Error loading selected PDF:', error);
+            }
+        };
+        loadSelectedPdf();
+    }, []);
 
     const availableStandards = [...new Set(mockUploadedContent.map(item => item.tags.standard))];
     const availableSubjects = selectedStandard ? [...new Set(mockUploadedContent
@@ -1278,8 +1219,7 @@ const CustomizerAssessment: React.FC = () => {
         try {
             const teacherId = await AsyncStorage.getItem('teacherId');
             if (!teacherId) {
-                console.error('Teacher ID not found.');
-                return;
+                throw new Error('Teacher ID not found.');
             }
 
             const response = await fetch(`${API_URL}/api/teachers/examsByTeacher`, {
@@ -1291,52 +1231,40 @@ const CustomizerAssessment: React.FC = () => {
             });
 
             if (!response.ok) {
-                console.warn(`Failed to fetch exams: ${response.status}`);
-                if (response.status === 404) {
-                    // Retry after a delay or proceed with examId
-                    if (examId) {
-                        const examResponse = await fetch(`${API_URL}/api/exams/${examId}`);
-                        if (!examResponse.ok) throw new Error('Failed to fetch exam by ID');
-                        const examData = await examResponse.json();
-                        const parsedQuestions = parseGeneratedQuestions(examData);
-                        setExamTitle(examData.examPaper?.examName || 'Assessment');
-                        setGeneratedQuestions(parsedQuestions);
-                        setExamConfig(prev => ({
-                            ...prev,
-                            totalMarks: parsedQuestions.reduce((total, q) => total + q.marks, 0),
-                        }));
-                        setCurrentStep('preview');
-                        return;
-                    }
-                }
                 throw new Error(`Failed to fetch exams: ${response.status}`);
             }
 
             const exams = await response.json();
-            if (!exams.length) throw new Error('No exams found');
+            if (!exams.length) {
+                throw new Error('No exams found for this teacher');
+            }
 
-            const latestExam = exams.sort((a: any, b: any) => new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
-            )[0];
+            // Find the exam matching the provided examId
+            const targetExam = examId ? exams.find((exam: any) => exam.id === examId) : null;
+            if (!targetExam) {
+                throw new Error(`Generated exam with ID ${examId} not found in teacher exams`);
+            }
 
-            const parsedQuestions = parseGeneratedQuestions(exams);
-            setExamTitle(latestExam.examPaper?.examName || 'Assessment');
+            console.log('Fetched exam:', JSON.stringify(targetExam, null, 2));
+
+            const parsedQuestions = parseGeneratedQuestions([targetExam]);
+            if (parsedQuestions.length === 0) {
+                throw new Error('No questions parsed from the exam data');
+            }
+
+            setExamTitle(targetExam.examPaper?.title || examTitle || 'Assessment');
             setGeneratedQuestions(parsedQuestions);
             setExamConfig(prev => ({
                 ...prev,
                 totalMarks: parsedQuestions.reduce((total, q) => total + q.marks, 0),
             }));
             setCurrentStep('preview');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching last generated exam:', error);
-            throw error;
+            Alert.alert('Error', `Failed to fetch generated exam: ${error.message}`);
+            setCurrentStep('configure');
         }
     };
-
-    useEffect(() => {
-        fetchLastGeneratedExam().catch(() => {
-            // On mount, if error, stay in selection, no alert
-        });
-    }, []);
 
     const generateQuestions = async (): Promise<void> => {
         setIsGenerating(true);
@@ -1346,9 +1274,9 @@ const CustomizerAssessment: React.FC = () => {
         console.log('Raw selectedChapters:', selectedChapters);
         console.log('Raw chapterNumbers:', chapterNumbers);
 
-        if (!Array.isArray(chapterNumbers)) {
-            console.error('chapterNumbers is not an array:', chapterNumbers);
-            Alert.alert('Error', 'Invalid chapter selection. Please select at least one chapter.');
+        if (!Array.isArray(chapterNumbers) || chapterNumbers.length === 0) {
+            console.error('Invalid chapter selection:', chapterNumbers);
+            Alert.alert('Error', 'Please select at least one chapter.');
             setIsGenerating(false);
             setCurrentStep('configure');
             return;
@@ -1356,6 +1284,7 @@ const CustomizerAssessment: React.FC = () => {
 
         const teacherId = await AsyncStorage.getItem('teacherId');
         if (!teacherId || isNaN(parseInt(teacherId))) {
+            console.error('Invalid teacherId:', teacherId);
             Alert.alert('Error', 'Teacher ID is missing or invalid. Please log in again.');
             setIsGenerating(false);
             setCurrentStep('configure');
@@ -1383,8 +1312,18 @@ const CustomizerAssessment: React.FC = () => {
 
         const questionPattern: { [key: string]: number } = {};
         Object.entries(examConfig.questionTypes).forEach(([type, { count }]) => {
-            questionPattern[type] = count;
+            if (count > 0) {
+                questionPattern[type] = count;
+            }
         });
+
+        if (Object.keys(questionPattern).length === 0) {
+            console.error('No valid question types selected');
+            Alert.alert('Error', 'Please configure at least one question type with a non-zero count.');
+            setIsGenerating(false);
+            setCurrentStep('configure');
+            return;
+        }
 
         chapterNumbers.forEach(chapter => {
             formData.append('chapters[]', chapter);
@@ -1411,6 +1350,7 @@ const CustomizerAssessment: React.FC = () => {
         console.log('- language:', selectedLanguage);
         console.log('- difficulty:', examConfig.difficulty);
         console.log('- duration:', examConfig.duration.toString());
+        console.log('- examTitle:', examTitle);
 
         try {
             const response = await fetch(`${API_URL}/api/exam/generate`, {
@@ -1421,17 +1361,32 @@ const CustomizerAssessment: React.FC = () => {
                 body: formData,
             });
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) {
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    console.error('Server error response:', JSON.stringify(errorData, null, 2));
+                    errorMessage = errorData.message || errorMessage;
+                } catch (jsonError) {
+                    console.error('Failed to parse error response:', jsonError);
+                }
+                throw new Error(errorMessage);
+            }
 
             const data = await response.json();
-            console.log('Full API Response:', JSON.stringify(data, null, 2));
+            console.log('Generate API Response:', JSON.stringify(data, null, 2));
 
-            // Pass the examId to fetchLastGeneratedExam
+            if (!data.examId) {
+                throw new Error('No examId returned from generate API');
+            }
+
+            // Fetch the last generated exam using the examId from the generate response
             await fetchLastGeneratedExam(data.examId);
 
         } catch (error: any) {
             console.error('Error generating exam:', error);
             Alert.alert('Error', `Failed to generate exam: ${error.message}`);
+            setIsGenerating(false);
             setCurrentStep('configure');
         } finally {
             setIsGenerating(false);
@@ -1462,7 +1417,6 @@ const CustomizerAssessment: React.FC = () => {
                         selectedLanguage={selectedLanguage}
                         setSelectedLanguage={setSelectedLanguage}
                         uploadedFile={uploadedFile}
-                        setUploadedFile={setUploadedFile}
                         setCurrentStep={setCurrentStep}
                         availableStandards={availableStandards}
                         availableSubjects={availableSubjects}
@@ -1523,7 +1477,6 @@ const CustomizerAssessment: React.FC = () => {
                         selectedLanguage={selectedLanguage}
                         setSelectedLanguage={setSelectedLanguage}
                         uploadedFile={uploadedFile}
-                        setUploadedFile={setUploadedFile}
                         setCurrentStep={setCurrentStep}
                         availableStandards={availableStandards}
                         availableSubjects={availableSubjects}
@@ -1585,11 +1538,11 @@ const CustomizerAssessment: React.FC = () => {
                     </View>
                 </View>
                 {renderStep()}
-                <Modal visible={showPdfPreview} animationType="slide" presentationStyle="fullScreen" >
+                <Modal visible={showPdfPreview} animationType="slide" presentationStyle="fullScreen">
                     <SafeAreaView style={styles.modalContainer}>
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Question Paper Preview</Text>
-                            <TouchableOpacity onPress={() => setShowPdfPreview(false)} style={styles.closeButton} >
+                            <TouchableOpacity onPress={() => setShowPdfPreview(false)} style={styles.closeButton}>
                                 <Text style={styles.closeButtonText}>✕</Text>
                             </TouchableOpacity>
                         </View>
@@ -1598,14 +1551,14 @@ const CustomizerAssessment: React.FC = () => {
                                 <View style={styles.pdfHeader}>
                                     <Text style={styles.pdfTitle}>{examTitle || 'Assessment'}</Text>
                                     <View style={styles.pdfInfo}>
-                                        <Text style={styles.pdfInfoText}>Curriculum: {selectedCurriculum || 'N/A'}</Text>
-                                        <Text style={styles.pdfInfoText}>Class: {selectedStandard || 'N/A'}</Text>
-                                        <Text style={styles.pdfInfoText}>Subject: {selectedSubject || 'N/A'}</Text>
-                                        <Text style={styles.pdfInfoText}>Chapters: {selectedChapters.length > 0 ? selectedChapters.join(', ') : 'N/A'}</Text>
+                                        <Text style={styles.pdfInfoText}>Curriculum: ${selectedCurriculum || 'N/A'}</Text>
+                                        <Text style={styles.pdfInfoText}>Class: ${selectedStandard || 'N/A'}</Text>
+                                        <Text style={styles.pdfInfoText}>Subject: ${selectedSubject || 'N/A'}</Text>
+                                        <Text style={styles.pdfInfoText}>Chapters: ${selectedChapters.length > 0 ? selectedChapters.join(', ') : 'N/A'}</Text>
                                     </View>
                                     <View style={styles.pdfInfo}>
-                                        <Text style={styles.pdfInfoText}>Total Marks: {calculateTotalMarks()}</Text>
-                                        <Text style={styles.pdfInfoText}>Duration: {examConfig.duration} minutes</Text>
+                                        <Text style={styles.pdfInfoText}>Total Marks: ${calculateTotalMarks()}</Text>
+                                        <Text style={styles.pdfInfoText}>Duration: ${examConfig.duration} minutes</Text>
                                     </View>
                                 </View>
                                 {Object.entries(examConfig.questionTypes).map(([type, values]) => {
@@ -1614,14 +1567,14 @@ const CustomizerAssessment: React.FC = () => {
                                     const title = type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                                     return (
                                         <View key={type} style={styles.pdfSection}>
-                                            <Text style={styles.pdfSectionTitle}>Section: {title} ({values.count * values.marks} marks)</Text>
+                                            <Text style={styles.pdfSectionTitle}>Section: ${title} (${values.count * values.marks} marks)</Text>
                                             {sectionQuestions.map((q, qIndex) => (
                                                 <View key={q.id} style={styles.pdfQuestion}>
-                                                    <Text style={styles.pdfQuestionText}>{qIndex + 1}. {q.question}</Text>
+                                                    <Text style={styles.pdfQuestionText}>{qIndex + 1}. ${q.question}</Text>
                                                     {q.type === 'multiple-choice' && 'options' in q && q.options && (
                                                         <View style={styles.pdfOptions}>
                                                             {q.options.map((option, oIndex) => (
-                                                                <Text key={oIndex} style={styles.pdfOptionText}>({String.fromCharCode(65 + oIndex)}) {option}</Text>
+                                                                <Text key={oIndex} style={styles.pdfOptionText}>({String.fromCharCode(65 + oIndex)}) ${option}</Text>
                                                             ))}
                                                         </View>
                                                     )}
@@ -1633,13 +1586,13 @@ const CustomizerAssessment: React.FC = () => {
                                                             <View style={styles.pdfMatchColumn}>
                                                                 <Text style={styles.pdfMatchColumnTitle}>Column A</Text>
                                                                 {q.leftColumn.map((item, i) => (
-                                                                    <Text key={i} style={styles.pdfMatchItem}>{i + 1}. {item}</Text>
+                                                                    <Text key={i} style={styles.pdfMatchItem}>{i + 1}. ${item}</Text>
                                                                 ))}
                                                             </View>
                                                             <View style={styles.pdfMatchColumn}>
                                                                 <Text style={styles.pdfMatchColumnTitle}>Column B</Text>
                                                                 {q.rightColumn.map((item, i) => (
-                                                                    <Text key={i} style={styles.pdfMatchItem}>{String.fromCharCode(65 + i)}. {item}</Text>
+                                                                    <Text key={i} style={styles.pdfMatchItem}>{String.fromCharCode(65 + i)}. ${item}</Text>
                                                                 ))}
                                                             </View>
                                                         </View>
@@ -1652,7 +1605,7 @@ const CustomizerAssessment: React.FC = () => {
                                 <View style={styles.pdfAnswerKey}>
                                     <Text style={styles.pdfAnswerKeyTitle}>Answer Key</Text>
                                     {generatedQuestions.map((q, index) => (
-                                        <Text key={q.id} style={styles.pdfAnswerKeyText}>Q{index + 1}: {getAnswerForQuestion(q)}</Text>
+                                        <Text key={q.id} style={styles.pdfAnswerKeyText}>Q${index + 1}: ${getAnswerForQuestion(q)}</Text>
                                     ))}
                                 </View>
                             </View>
@@ -1663,6 +1616,8 @@ const CustomizerAssessment: React.FC = () => {
         </SafeAreaView>
     );
 };
+
+// Placeholder for styles (not included as per request)
 
 const styles = StyleSheet.create({
     safeArea: {
@@ -1739,9 +1694,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f9fafb',
-    },
-    scrollView: {
-        flex: 1,
     },
     card: {
         backgroundColor: '#fff',

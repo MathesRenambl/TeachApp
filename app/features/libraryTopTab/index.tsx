@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -8,7 +8,11 @@ import {
     Image,
     StyleSheet,
     Dimensions,
+    Modal,
+    Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as DocumentPicker from "expo-document-picker";
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -124,6 +128,11 @@ interface LibraryTabProps {
 const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
     const [activeSection, setActiveSection] = useState<'public' | 'private'>('public');
     const [searchQuery, setSearchQuery] = useState('');
+    const [myDocs, setMyDocs] = useState<{ id: string; title: string; url: string }[]>([]);
+    const [isAddPdfModalVisible, setAddPdfModalVisible] = useState(false);
+    const [newPdfTitle, setNewPdfTitle] = useState('');
+    const [uploadedFile, setUploadedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+    const [selectedPdf, setSelectedPdf] = useState<{ title: string; url: string } | null>(null);
 
     // Public Library State
     const [selectedCurriculum, setSelectedCurriculum] = useState<string | null>(null);
@@ -138,6 +147,98 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
     const [privateClass, setPrivateClass] = useState<string | null>(null);
     const [privateSubject, setPrivateSubject] = useState<string | null>(null);
     const [privateSearchQuery, setPrivateSearchQuery] = useState('');
+
+    // Load My Docs and Selected PDF from AsyncStorage
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                // Load My Docs
+                const storedDocs = await AsyncStorage.getItem('myDocs');
+                if (storedDocs) {
+                    setMyDocs(JSON.parse(storedDocs));
+                }
+
+                // Load Selected PDF
+                const storedPdf = await AsyncStorage.getItem('selectedPdf');
+                if (storedPdf) {
+                    setSelectedPdf(JSON.parse(storedPdf));
+                }
+            } catch (error) {
+                console.error('Error loading data from AsyncStorage:', error);
+            }
+        };
+        loadData();
+    }, []);
+
+    // Save My Docs to AsyncStorage
+    const saveMyDocs = async (docs: { id: string; title: string; url: string }[]) => {
+        try {
+            await AsyncStorage.setItem('myDocs', JSON.stringify(docs));
+            setMyDocs(docs);
+        } catch (error) {
+            console.error('Error saving docs to AsyncStorage:', error);
+        }
+    };
+
+    const handleUpload = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: 'application/pdf',
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const file = result.assets[0];
+                setUploadedFile(file);
+                if (!newPdfTitle) {
+                    setNewPdfTitle(file.name);
+                }
+            }
+        } catch (err) {
+            console.error('Document Picker Error: ', err);
+            Alert.alert('Error', 'Failed to pick document.');
+        }
+    };
+
+    // Handle adding a new PDF
+    const handleAddPdf = () => {
+        if (!newPdfTitle || !uploadedFile) {
+            Alert.alert('Error', 'Please provide title and upload a PDF');
+            return;
+        }
+
+        const newDoc = {
+            id: `${Date.now()}`,
+            title: newPdfTitle,
+            url: uploadedFile.uri,
+        };
+
+        const updatedDocs = [...myDocs, newDoc];
+        saveMyDocs(updatedDocs);
+        setSelectedPdf({ title: newDoc.title, url: newDoc.url });
+        storeSelected(newDoc);
+        setNewPdfTitle('');
+        setUploadedFile(null);
+        setAddPdfModalVisible(false);
+    };
+
+    const storeSelected = async (doc: { id: string; title: string; url: string }) => {
+        try {
+            await AsyncStorage.setItem('selectedPdf', JSON.stringify({title: doc.title, url: doc.url}));
+            setSelectedPdf({ title: doc.title, url: doc.url });
+            Alert.alert('Selected', 'PDF selected for assessment');
+        } catch (error) {
+            console.error('Error storing selected PDF:', error);
+        }
+    };
+
+    // Handle PDF view action
+    const handleViewPdf = (url: string) => {
+        // Implement PDF viewing logic here
+        // For now, we'll show an alert to indicate the view action
+        Alert.alert('View PDF', `Opening PDF: ${url}`);
+        // In a real implementation, you might use a library like react-native-pdf
+        // to display the PDF or open it in a native viewer
+    };
 
     const curriculums = [
         {
@@ -281,8 +382,8 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
             { id: 'ch2_tamil_s1', title: 'Grammer', pdfCount: 2 }
         ],
         tamil_s2: [
-            { id: 'ch1_tamil_s1', title: 'Basics', pdfCount: 3 },
-            { id: 'ch2_tamil_s1', title: 'Grammer', pdfCount: 2 }
+            { id: 'ch1_tamil_s2', title: 'Basics', pdfCount: 3 },
+            { id: 'ch2_tamil_s2', title: 'Grammer', pdfCount: 2 }
         ],
         maths_s2: [
             { id: "ch1_maths_s2", title: "Numbers", pdfCount: 3 },
@@ -628,18 +729,49 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                             </View>
                         )}
 
-                        {/* Curriculum Selection */}
+                        {/* Curriculum Selection and My Docs */}
                         {!selectedCurriculum && (
                             <View style={styles.section}>
                                 <View style={styles.sectionHeader}>
                                     <Text style={styles.sectionTitle}>Select Curriculum</Text>
-                                    <Button variant="primary" size="sm">
+                                    <Button variant="primary" size="sm" onPress={() => setAddPdfModalVisible(true)}>
                                         Upload PDF
                                     </Button>
                                 </View>
                                 <View style={styles.grid}>
+                                    {/* My Docs Card */}
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            if (myDocs.length > 0 || selectedPdf) {
+                                                // Scroll to My Docs section or handle view action
+                                                Alert.alert('My Docs', 'Viewing My Documents section');
+                                            } else {
+                                                setAddPdfModalVisible(true);
+                                            }
+                                        }}
+                                        style={styles.gridItem}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Card gradient={['#776bffff', '#5797feff']} padding="md">
+                                            <View style={styles.gradientCardContent}>
+                                                <View style={styles.cardHeader}>
+                                                    <View style={styles.iconContainer}>
+                                                        <Ionicons name="documents" size={24} color="#FFFFFF" />
+                                                    </View>
+                                                    <Text style={styles.cardCount}>{myDocs.length + (selectedPdf ? 1 : 0)}</Text>
+                                                </View>
+                                                <Text style={styles.cardTitle}>My Docs</Text>
+                                                <Text style={styles.cardSubtitle}>{myDocs.length + (selectedPdf ? 1 : 0)} PDFs saved</Text>
+                                            </View>
+                                        </Card>
+                                    </TouchableOpacity>
                                     {curriculums.map(item => (
-                                        <TouchableOpacity key={item.id} onPress={() => setSelectedCurriculum(item.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                        <TouchableOpacity
+                                            key={item.id}
+                                            onPress={() => setSelectedCurriculum(item.id)}
+                                            style={styles.gridItem}
+                                            activeOpacity={0.8}
+                                        >
                                             <Card gradient={item.gradient} padding="md">
                                                 <View style={styles.gradientCardContent}>
                                                     <View style={styles.cardHeader}>
@@ -655,8 +787,134 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                         </TouchableOpacity>
                                     ))}
                                 </View>
+
+                                {/* My Docs List */}
+                                {(myDocs.length > 0 || selectedPdf) && (
+                                    <View style={styles.section}>
+                                        <Text style={styles.sectionTitle}>My Documents</Text>
+                                        <View style={styles.pdfList}>
+                                            {selectedPdf && (
+                                                <TouchableOpacity
+                                                    key="selected-pdf"
+                                                    onPress={() => handleViewPdf(selectedPdf.url)}
+                                                >
+                                                    <Card style={styles.pdfCard}>
+                                                        <View style={styles.pdfItemContent}>
+                                                            <View style={styles.pdfIconWrapper}>
+                                                                <LinearGradient
+                                                                    colors={['#FF6B6B', '#FF8E8E']}
+                                                                    style={styles.pdfIconGradient}
+                                                                    start={{ x: 0, y: 0 }}
+                                                                    end={{ x: 1, y: 1 }}
+                                                                >
+                                                                    <Ionicons name="document" size={24} color="#FFFFFF" />
+                                                                </LinearGradient>
+                                                            </View>
+                                                            <View style={styles.pdfInfo}>
+                                                                <Text style={styles.pdfTitle}>{selectedPdf.title}</Text>
+                                                                <Text style={styles.pdfFileName}>{selectedPdf.url}</Text>
+                                                            </View>
+                                                            <View style={styles.pdfActions}>
+                                                                <TouchableOpacity
+                                                                    style={styles.pdfActionButton}
+                                                                    onPress={() => handleViewPdf(selectedPdf.url)}
+                                                                >
+                                                                    <Ionicons name="eye" size={20} color="#667eea" />
+                                                                </TouchableOpacity>
+                                                                <TouchableOpacity
+                                                                    style={styles.pdfActionButton}
+                                                                    onPress={() => storeSelected({ id: 'selected', ...selectedPdf })}
+                                                                >
+                                                                    <Ionicons name="download" size={20} color="#43e97b" />
+                                                                </TouchableOpacity>
+                                                            </View>
+                                                        </View>
+                                                    </Card>
+                                                </TouchableOpacity>
+                                            )}
+                                            {myDocs.map(doc => (
+                                                <TouchableOpacity
+                                                    key={doc.id}
+                                                    onPress={() => handleViewPdf(doc.url)}
+                                                >
+                                                    <Card style={styles.pdfCard}>
+                                                        <View style={styles.pdfItemContent}>
+                                                            <View style={styles.pdfIconWrapper}>
+                                                                <LinearGradient
+                                                                    colors={['#FF6B6B', '#FF8E8E']}
+                                                                    style={styles.pdfIconGradient}
+                                                                    start={{ x: 0, y: 0 }}
+                                                                    end={{ x: 1, y: 1 }}
+                                                                >
+                                                                    <Ionicons name="document" size={24} color="#FFFFFF" />
+                                                                </LinearGradient>
+                                                            </View>
+                                                            <View style={styles.pdfInfo}>
+                                                                <Text style={styles.pdfTitle}>{doc.title}</Text>
+                                                                <Text style={styles.pdfFileName}>{doc.url}</Text>
+                                                            </View>
+                                                            <View style={styles.pdfActions}>
+                                                                <TouchableOpacity
+                                                                    style={styles.pdfActionButton}
+                                                                    onPress={() => handleViewPdf(doc.url)}
+                                                                >
+                                                                    <Ionicons name="eye" size={20} color="#667eea" />
+                                                                </TouchableOpacity>
+                                                                <TouchableOpacity
+                                                                    style={styles.pdfActionButton}
+                                                                    onPress={() => storeSelected(doc)}
+                                                                >
+                                                                    <Ionicons name="download" size={20} color="#43e97b" />
+                                                                </TouchableOpacity>
+                                                            </View>
+                                                        </View>
+                                                    </Card>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                    </View>
+                                )}
                             </View>
                         )}
+
+                        {/* Add PDF Modal */}
+                        <Modal
+                            visible={isAddPdfModalVisible}
+                            animationType="slide"
+                            transparent={true}
+                            onRequestClose={() => setAddPdfModalVisible(false)}
+                        >
+                            <View style={styles.modalContainer}>
+                                <View style={styles.modalContent}>
+                                    <Text style={styles.sectionTitle}>Add New PDF</Text>
+                                    <TextInput
+                                        style={styles.searchInput}
+                                        placeholder="PDF Title"
+                                        placeholderTextColor="#9ca3af"
+                                        value={newPdfTitle}
+                                        onChangeText={setNewPdfTitle}
+                                    />
+                                    <TouchableOpacity style={styles.uploadButton} onPress={handleUpload}>
+                                        <Ionicons name="cloud-upload" size={20} color="#FFFFFF" />
+                                        <Text style={styles.uploadButtonText}>Upload PDF</Text>
+                                    </TouchableOpacity>
+                                    {uploadedFile && (
+                                        <Text style={styles.fileNameText}>{uploadedFile.name}</Text>
+                                    )}
+                                    <View style={styles.modalButtonContainer}>
+                                        <Button
+                                            variant="secondary"
+                                            onPress={() => setAddPdfModalVisible(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button variant="primary" onPress={handleAddPdf}>
+                                            Add PDF
+                                        </Button>
+                                    </View>
+                                </View>
+                            </View>
+                        </Modal>
 
                         {/* Medium Selection */}
                         {selectedCurriculum && !selectedMedium && (
@@ -664,7 +922,12 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                 <Text style={styles.sectionTitle}>Select Medium</Text>
                                 <View style={styles.grid}>
                                     {(curriculums.find(c => c.id === selectedCurriculum)?.media || []).map(medium => (
-                                        <TouchableOpacity key={medium.id} onPress={() => setSelectedMedium(medium.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                        <TouchableOpacity
+                                            key={medium.id}
+                                            onPress={() => setSelectedMedium(medium.id)}
+                                            style={styles.gridItem}
+                                            activeOpacity={0.8}
+                                        >
                                             <Card gradient={medium.gradient} padding="md">
                                                 <View style={styles.gradientCardContent}>
                                                     <View style={styles.cardHeader}>
@@ -689,7 +952,12 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                 <Text style={styles.sectionTitle}>Select Class</Text>
                                 <View style={styles.grid}>
                                     {currentClasses.map(classItem => (
-                                        <TouchableOpacity key={classItem.id} onPress={() => setSelectedClass(classItem.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                        <TouchableOpacity
+                                            key={classItem.id}
+                                            onPress={() => setSelectedClass(classItem.id)}
+                                            style={styles.gridItem}
+                                            activeOpacity={0.8}
+                                        >
                                             <Card gradient={classItem.gradient} padding="md">
                                                 <View style={styles.gradientCardContent}>
                                                     <View style={styles.cardHeader}>
@@ -714,7 +982,12 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                 <Text style={styles.sectionTitle}>Select Subject</Text>
                                 <View style={styles.grid}>
                                     {(currentSubjects || []).map(subject => (
-                                        <TouchableOpacity key={subject.id} onPress={() => setSelectedSubject(subject.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                        <TouchableOpacity
+                                            key={subject.id}
+                                            onPress={() => setSelectedSubject(subject.id)}
+                                            style={styles.gridItem}
+                                            activeOpacity={0.8}
+                                        >
                                             <Card gradient={subject.gradient} padding="md">
                                                 <View style={styles.gradientCardContent}>
                                                     <View style={styles.cardHeader}>
@@ -739,7 +1012,11 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                 <Text style={styles.sectionTitle}>Select Chapter</Text>
                                 <View style={styles.chapterList}>
                                     {(currentChapters || []).map((chapter, index) => (
-                                        <TouchableOpacity key={chapter.id} onPress={() => setSelectedChapter(chapter.id)} activeOpacity={0.8}>
+                                        <TouchableOpacity
+                                            key={chapter.id}
+                                            onPress={() => setSelectedChapter(chapter.id)}
+                                            activeOpacity={0.8}
+                                        >
                                             <Card style={styles.chapterCard}>
                                                 <View style={styles.chapterItemContent}>
                                                     <View style={styles.chapterIconWrapper}>
@@ -770,7 +1047,7 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                             <View style={styles.section}>
                                 <View style={styles.sectionHeader}>
                                     <Text style={styles.sectionTitle}>Uploaded PDFs</Text>
-                                    <Button size="sm">Add PDF</Button>
+                                    <Button size="sm" onPress={() => setAddPdfModalVisible(true)}>Add PDF</Button>
                                 </View>
                                 <View style={styles.pdfList}>
                                     {currentPdfs.map(pdf => (
@@ -798,7 +1075,10 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                                     </View>
                                                 </View>
                                                 <View style={styles.pdfActions}>
-                                                    <TouchableOpacity style={styles.pdfActionButton}>
+                                                    <TouchableOpacity
+                                                        style={styles.pdfActionButton}
+                                                        onPress={() => handleViewPdf(pdf.fileName)}
+                                                    >
                                                         <Ionicons name="eye" size={20} color="#667eea" />
                                                     </TouchableOpacity>
                                                     <TouchableOpacity style={styles.pdfActionButton}>
@@ -860,7 +1140,12 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                 </View>
                                 <View style={styles.grid}>
                                     {curriculums.map(item => (
-                                        <TouchableOpacity key={item.id} onPress={() => setPrivateCurriculum(item.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                        <TouchableOpacity
+                                            key={item.id}
+                                            onPress={() => setPrivateCurriculum(item.id)}
+                                            style={styles.gridItem}
+                                            activeOpacity={0.8}
+                                        >
                                             <Card gradient={item.gradient} padding="md">
                                                 <View style={styles.gradientCardContent}>
                                                     <View style={styles.cardHeader}>
@@ -885,7 +1170,12 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                 <Text style={styles.sectionTitle}>Select Medium</Text>
                                 <View style={styles.grid}>
                                     {(curriculums.find(c => c.id === privateCurriculum)?.media || []).map(medium => (
-                                        <TouchableOpacity key={medium.id} onPress={() => setPrivateMedium(medium.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                        <TouchableOpacity
+                                            key={medium.id}
+                                            onPress={() => setPrivateMedium(medium.id)}
+                                            style={styles.gridItem}
+                                            activeOpacity={0.8}
+                                        >
                                             <Card gradient={medium.gradient} padding="md">
                                                 <View style={styles.gradientCardContent}>
                                                     <View style={styles.cardHeader}>
@@ -910,7 +1200,12 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                 <Text style={styles.sectionTitle}>Select Class</Text>
                                 <View style={styles.grid}>
                                     {privateCurrentClasses.map(classItem => (
-                                        <TouchableOpacity key={classItem.id} onPress={() => setPrivateClass(classItem.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                        <TouchableOpacity
+                                            key={classItem.id}
+                                            onPress={() => setPrivateClass(classItem.id)}
+                                            style={styles.gridItem}
+                                            activeOpacity={0.8}
+                                        >
                                             <Card gradient={classItem.gradient} padding="md">
                                                 <View style={styles.gradientCardContent}>
                                                     <View style={styles.cardHeader}>
@@ -935,7 +1230,12 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                 <Text style={styles.sectionTitle}>Select Subject</Text>
                                 <View style={styles.grid}>
                                     {(privateCurrentSubjects || []).map(subject => (
-                                        <TouchableOpacity key={subject.id} onPress={() => setPrivateSubject(subject.id)} style={styles.gridItem} activeOpacity={0.8}>
+                                        <TouchableOpacity
+                                            key={subject.id}
+                                            onPress={() => setPrivateSubject(subject.id)}
+                                            style={styles.gridItem}
+                                            activeOpacity={0.8}
+                                        >
                                             <Card gradient={subject.gradient} padding="md">
                                                 <View style={styles.gradientCardContent}>
                                                     <View style={styles.cardHeader}>
@@ -958,7 +1258,6 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                         {privateSubject && (
                             <View style={styles.section}>
                                 <Text style={styles.sectionTitle}>Chapters</Text>
-                                
                                 <View style={styles.chapterList}>
                                     {filteredPrivateChapters.map(chapter => (
                                         <Card key={chapter.id} style={styles.chapterCard}>
@@ -1021,7 +1320,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8F9FA',
-        // paddingHorizontal: width * 0.04,
         paddingTop: 16,
     },
 
@@ -1387,6 +1685,46 @@ const styles = StyleSheet.create({
     noResultsSubText: {
         fontSize: 14,
         color: '#7F8C8D',
+        textAlign: 'center',
+    },
+
+    // Modal Styles
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 24,
+        width: width * 0.9,
+        gap: 16,
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 16,
+    },
+    uploadButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#4C51BF',
+        borderRadius: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+    },
+    uploadButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 8,
+    },
+    fileNameText: {
+        fontSize: 14,
+        color: '#2C3E50',
         textAlign: 'center',
     },
 });
