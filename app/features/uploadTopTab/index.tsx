@@ -234,8 +234,9 @@ const Dashboard: React.FC<DashboardProps> = ({
             <UploadComponent
                 onFilesUploaded={handleFilesUploaded}
                 onUploadStart={handleUploadStart}
-                onUploadComplete={handleUploadComplete}
-            />
+                onUploadComplete={handleUploadComplete} onFileUrlReceived={function (url: string): void {
+                    throw new Error('Function not implemented.');
+                } }            />
 
             {/* Quick Actions */}
             <View style={styles.quickActionsSection}>

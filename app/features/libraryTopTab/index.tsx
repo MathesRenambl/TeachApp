@@ -128,11 +128,15 @@ interface LibraryTabProps {
 const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
     const [activeSection, setActiveSection] = useState<'public' | 'private'>('public');
     const [searchQuery, setSearchQuery] = useState('');
+
     const [myDocs, setMyDocs] = useState<{ id: string; title: string; url: string }[]>([]);
     const [isAddPdfModalVisible, setAddPdfModalVisible] = useState(false);
     const [newPdfTitle, setNewPdfTitle] = useState('');
     const [uploadedFile, setUploadedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
     const [selectedPdf, setSelectedPdf] = useState<{ title: string; url: string } | null>(null);
+
+    // New state to track if "My Docs" is selected
+    const [isMyDocsSelected, setIsMyDocsSelected] = useState(false);
 
     // Public Library State
     const [selectedCurriculum, setSelectedCurriculum] = useState<string | null>(null);
@@ -223,7 +227,7 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
 
     const storeSelected = async (doc: { id: string; title: string; url: string }) => {
         try {
-            await AsyncStorage.setItem('selectedPdf', JSON.stringify({title: doc.title, url: doc.url}));
+            await AsyncStorage.setItem('selectedPdf', JSON.stringify({ title: doc.title, url: doc.url }));
             setSelectedPdf({ title: doc.title, url: doc.url });
             Alert.alert('Selected', 'PDF selected for assessment');
         } catch (error) {
@@ -233,11 +237,14 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
 
     // Handle PDF view action
     const handleViewPdf = (url: string) => {
-        // Implement PDF viewing logic here
-        // For now, we'll show an alert to indicate the view action
-        Alert.alert('View PDF', `Opening PDF: ${url}`);
-        // In a real implementation, you might use a library like react-native-pdf
-        // to display the PDF or open it in a native viewer
+        // This is where you would implement PDF viewing logic using a library.
+        // For now, it shows an alert.
+        Alert.alert('View PDF', `Opening PDF from: ${url}`);
+    };
+
+    // New function to handle selecting a PDF by clicking the card
+    const handleSelectPdf = (doc: { id: string; title: string; url: string }) => {
+        storeSelected(doc);
     };
 
     const curriculums = [
@@ -515,6 +522,8 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
             setSelectedMedium(null);
         } else if (selectedCurriculum) {
             setSelectedCurriculum(null);
+        } else if (isMyDocsSelected) {
+            setIsMyDocsSelected(false);
         }
     };
 
@@ -532,6 +541,12 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
 
     const renderBreadcrumb = () => {
         const breadcrumbs = [];
+        if (isMyDocsSelected) {
+            breadcrumbs.push({
+                label: 'My Docs',
+                onPress: () => setIsMyDocsSelected(false),
+            });
+        }
         if (selectedCurriculum) {
             breadcrumbs.push({
                 label: curriculums.find(c => c.id === selectedCurriculum)?.label || '',
@@ -707,7 +722,7 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                 {activeSection === 'public' ? (
                     <>
                         {/* Navigation Header */}
-                        {(selectedCurriculum || selectedMedium || selectedClass || selectedSubject || selectedChapter) && (
+                        {(isMyDocsSelected || selectedCurriculum || selectedMedium || selectedClass || selectedSubject || selectedChapter) && (
                             <View style={styles.navigationHeader}>
                                 <TouchableOpacity onPress={handleBack} style={styles.backButton}>
                                     <Ionicons name="arrow-back" size={24} color="#667eea" />
@@ -730,7 +745,7 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                         )}
 
                         {/* Curriculum Selection and My Docs */}
-                        {!selectedCurriculum && (
+                        {!selectedCurriculum && !isMyDocsSelected && (
                             <View style={styles.section}>
                                 <View style={styles.sectionHeader}>
                                     <Text style={styles.sectionTitle}>Select Curriculum</Text>
@@ -743,8 +758,7 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                     <TouchableOpacity
                                         onPress={() => {
                                             if (myDocs.length > 0 || selectedPdf) {
-                                                // Scroll to My Docs section or handle view action
-                                                Alert.alert('My Docs', 'Viewing My Documents section');
+                                                setIsMyDocsSelected(true);
                                             } else {
                                                 setAddPdfModalVisible(true);
                                             }
@@ -787,93 +801,6 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                         </TouchableOpacity>
                                     ))}
                                 </View>
-
-                                {/* My Docs List */}
-                                {(myDocs.length > 0 || selectedPdf) && (
-                                    <View style={styles.section}>
-                                        <Text style={styles.sectionTitle}>My Documents</Text>
-                                        <View style={styles.pdfList}>
-                                            {selectedPdf && (
-                                                <TouchableOpacity
-                                                    key="selected-pdf"
-                                                    onPress={() => handleViewPdf(selectedPdf.url)}
-                                                >
-                                                    <Card style={styles.pdfCard}>
-                                                        <View style={styles.pdfItemContent}>
-                                                            <View style={styles.pdfIconWrapper}>
-                                                                <LinearGradient
-                                                                    colors={['#FF6B6B', '#FF8E8E']}
-                                                                    style={styles.pdfIconGradient}
-                                                                    start={{ x: 0, y: 0 }}
-                                                                    end={{ x: 1, y: 1 }}
-                                                                >
-                                                                    <Ionicons name="document" size={24} color="#FFFFFF" />
-                                                                </LinearGradient>
-                                                            </View>
-                                                            <View style={styles.pdfInfo}>
-                                                                <Text style={styles.pdfTitle}>{selectedPdf.title}</Text>
-                                                                <Text style={styles.pdfFileName}>{selectedPdf.url}</Text>
-                                                            </View>
-                                                            <View style={styles.pdfActions}>
-                                                                <TouchableOpacity
-                                                                    style={styles.pdfActionButton}
-                                                                    onPress={() => handleViewPdf(selectedPdf.url)}
-                                                                >
-                                                                    <Ionicons name="eye" size={20} color="#667eea" />
-                                                                </TouchableOpacity>
-                                                                <TouchableOpacity
-                                                                    style={styles.pdfActionButton}
-                                                                    onPress={() => storeSelected({ id: 'selected', ...selectedPdf })}
-                                                                >
-                                                                    <Ionicons name="download" size={20} color="#43e97b" />
-                                                                </TouchableOpacity>
-                                                            </View>
-                                                        </View>
-                                                    </Card>
-                                                </TouchableOpacity>
-                                            )}
-                                            {myDocs.map(doc => (
-                                                <TouchableOpacity
-                                                    key={doc.id}
-                                                    onPress={() => handleViewPdf(doc.url)}
-                                                >
-                                                    <Card style={styles.pdfCard}>
-                                                        <View style={styles.pdfItemContent}>
-                                                            <View style={styles.pdfIconWrapper}>
-                                                                <LinearGradient
-                                                                    colors={['#FF6B6B', '#FF8E8E']}
-                                                                    style={styles.pdfIconGradient}
-                                                                    start={{ x: 0, y: 0 }}
-                                                                    end={{ x: 1, y: 1 }}
-                                                                >
-                                                                    <Ionicons name="document" size={24} color="#FFFFFF" />
-                                                                </LinearGradient>
-                                                            </View>
-                                                            <View style={styles.pdfInfo}>
-                                                                <Text style={styles.pdfTitle}>{doc.title}</Text>
-                                                                <Text style={styles.pdfFileName}>{doc.url}</Text>
-                                                            </View>
-                                                            <View style={styles.pdfActions}>
-                                                                <TouchableOpacity
-                                                                    style={styles.pdfActionButton}
-                                                                    onPress={() => handleViewPdf(doc.url)}
-                                                                >
-                                                                    <Ionicons name="eye" size={20} color="#667eea" />
-                                                                </TouchableOpacity>
-                                                                <TouchableOpacity
-                                                                    style={styles.pdfActionButton}
-                                                                    onPress={() => storeSelected(doc)}
-                                                                >
-                                                                    <Ionicons name="download" size={20} color="#43e97b" />
-                                                                </TouchableOpacity>
-                                                            </View>
-                                                        </View>
-                                                    </Card>
-                                                </TouchableOpacity>
-                                            ))}
-                                        </View>
-                                    </View>
-                                )}
                             </View>
                         )}
 
@@ -916,6 +843,103 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                             </View>
                         </Modal>
 
+                        {/* My Docs List */}
+                        {isMyDocsSelected && (
+                            <View style={styles.section}>
+                                <View style={styles.sectionHeader}>
+                                    <Text style={styles.sectionTitle}>My Documents</Text>
+                                    <Button variant="primary" size="sm" onPress={() => setAddPdfModalVisible(true)}>
+                                        Upload PDF
+                                    </Button>
+                                </View>
+                                <View style={styles.pdfList}>
+                                    {selectedPdf && (
+                                        <TouchableOpacity
+                                            key="selected-pdf"
+                                            // Call the new handler to save the document to AsyncStorage
+                                            onPress={() => handleSelectPdf({ id: 'selected', ...selectedPdf })}
+                                        >
+                                            <Card style={styles.pdfCard}>
+                                                <View style={styles.pdfItemContent}>
+                                                    <View style={styles.pdfIconWrapper}>
+                                                        <LinearGradient
+                                                            colors={['#FF6B6B', '#FF8E8E']}
+                                                            style={styles.pdfIconGradient}
+                                                            start={{ x: 0, y: 0 }}
+                                                            end={{ x: 1, y: 1 }}
+                                                        >
+                                                            <Ionicons name="document" size={24} color="#FFFFFF" />
+                                                        </LinearGradient>
+                                                    </View>
+                                                    <View style={styles.pdfInfo}>
+                                                        <Text style={styles.pdfTitle}>{selectedPdf.title}</Text>
+                                                        <Text style={styles.pdfFileName}>{selectedPdf.url}</Text>
+                                                    </View>
+                                                    <View style={styles.pdfActions}>
+                                                        {/* This button will view the PDF */}
+                                                        <TouchableOpacity
+                                                            style={styles.pdfActionButton}
+                                                            onPress={() => handleViewPdf(selectedPdf.url)}
+                                                        >
+                                                            <Ionicons name="eye" size={20} color="#667eea" />
+                                                        </TouchableOpacity>
+                                                        {/* This button will store in async storage */}
+                                                        <TouchableOpacity
+                                                            style={styles.pdfActionButton}
+                                                            onPress={() => storeSelected({ id: 'selected', ...selectedPdf })}
+                                                        >
+                                                            <Ionicons name="download" size={20} color="#43e97b" />
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                </View>
+                                            </Card>
+                                        </TouchableOpacity>
+                                    )}
+                                    {myDocs.map(doc => (
+                                        <TouchableOpacity
+                                            key={doc.id}
+                                            // Call the new handler to save the document to AsyncStorage
+                                            onPress={() => handleSelectPdf(doc)}
+                                        >
+                                            <Card style={styles.pdfCard}>
+                                                <View style={styles.pdfItemContent}>
+                                                    <View style={styles.pdfIconWrapper}>
+                                                        <LinearGradient
+                                                            colors={['#FF6B6B', '#FF8E8E']}
+                                                            style={styles.pdfIconGradient}
+                                                            start={{ x: 0, y: 0 }}
+                                                            end={{ x: 1, y: 1 }}
+                                                        >
+                                                            <Ionicons name="document" size={24} color="#FFFFFF" />
+                                                        </LinearGradient>
+                                                    </View>
+                                                    <View style={styles.pdfInfo}>
+                                                        <Text style={styles.pdfTitle}>{doc.title}</Text>
+                                                        <Text style={styles.pdfFileName}>{doc.url}</Text>
+                                                    </View>
+                                                    <View style={styles.pdfActions}>
+                                                        {/* This button will view the PDF */}
+                                                        <TouchableOpacity
+                                                            style={styles.pdfActionButton}
+                                                            onPress={() => handleViewPdf(doc.url)}
+                                                        >
+                                                            <Ionicons name="eye" size={20} color="#667eea" />
+                                                        </TouchableOpacity>
+                                                        {/* This button will store in async storage */}
+                                                        <TouchableOpacity
+                                                            style={styles.pdfActionButton}
+                                                            onPress={() => storeSelected(doc)}
+                                                        >
+                                                            <Ionicons name="download" size={20} color="#43e97b" />
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                </View>
+                                            </Card>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
                         {/* Medium Selection */}
                         {selectedCurriculum && !selectedMedium && (
                             <View style={styles.section}>
@@ -1075,12 +1099,14 @@ const LibraryTab: React.FC<LibraryTabProps> = ({ isDark = false }) => {
                                                     </View>
                                                 </View>
                                                 <View style={styles.pdfActions}>
+                                                    {/* This button will view the PDF */}
                                                     <TouchableOpacity
                                                         style={styles.pdfActionButton}
                                                         onPress={() => handleViewPdf(pdf.fileName)}
                                                     >
                                                         <Ionicons name="eye" size={20} color="#667eea" />
                                                     </TouchableOpacity>
+                                                    {/* This button will store in async storage */}
                                                     <TouchableOpacity style={styles.pdfActionButton}>
                                                         <Ionicons name="download" size={20} color="#43e97b" />
                                                     </TouchableOpacity>
